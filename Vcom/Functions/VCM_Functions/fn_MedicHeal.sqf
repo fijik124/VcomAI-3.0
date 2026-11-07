@@ -1,39 +1,15 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Makes medic move to a soldier and heal him.
-
-	Parameter(s):
-		0: OBJECT - Medic
-		1: OBJECT - Injured unit
-
-	Returns:
-		NOTHING
-*/
-
-params ["_medic","_unit"];
-
-if (_medic isEqualType [] || {!(alive _medic)} || {!(alive _unit)} || {_unit distance2D _medic > 75}) exitWith {};
-
-if (VCM_DEBUG) then {systemChat format ["%1 attempting to heal %2", _medic, _unit];};
-
-_medic setVariable ["VCM_MBUSY", true];
-
-while {alive _medic && {alive _unit} && {_unit distance2D _medic > 3}} do 
-{
-	_medic doMove getPos _unit;
-	sleep 3;
+/* Author: Genesis. Let the engine apply treatment and consume supplies. */
+params ["_medic", "_patient", "_run"];
+private _group = group _medic;
+if (VCM_MEDICALACTIVE && {[_medic, _group, _run] call VCM_fnc_ActionValid} && {alive _patient}) then {
+    private _arrived = [_medic, getPosATL _patient, 40, {alive _patient && {VCM_MEDICALACTIVE}}] call VCM_fnc_MoveTo;
+    if (_arrived && {_medic distance _patient < 4} && {alive _patient} && {VCM_MEDICALACTIVE}) then {
+        _medic action ["HealSoldier", _patient];
+        sleep 5;
+    };
 };
-
-if (!(alive _medic) || {!(alive _unit)} || {_unit distance2D _medic > 75}) exitWith {};
-
-doStop _unit;
-doStop _medic;
-
-_medic action ["HealSoldier",_unit];
-sleep 4;
-_unit setdamage 0;
-
-_medic setVariable ["VCM_MBUSY", false]; // No longer busy
+if (_run isEqualTo (_group getVariable ["VCM_RunId", []])) then {
+    _medic setVariable ["VCM_MBUSY", false];
+    _patient setVariable ["VCM_PatientBusy", false];
+    if ([_medic, _group, _run] call VCM_fnc_ActionValid && {_medic != leader _group}) then {_medic doFollow leader _group};
+};

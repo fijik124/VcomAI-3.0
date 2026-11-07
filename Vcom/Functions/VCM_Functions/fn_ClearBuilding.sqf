@@ -1,50 +1,23 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Orders group to clear building
-
-	Parameter(s):
-		0: GROUP - Clearing group
-		1: OBJECT - Enemy to clear out
-
-	Returns:
-		STRING
-*/
-
-params ["_group","_enemy"];
-
-private _nBuildingLst = nearestObjects [_enemy, ["House", "Building"], 25];
-if (count _nBuildingLst < 1) exitWith {};
-
-private _buildingPositions = [];
-
+/* Author: Genesis. Clear remembered contact positions without piling the whole squad onto one point. */
+params ["_group", "_enemy"];
+if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (!([_group] call VCM_fnc_GroupEnabled) || {isNull _enemy} || {_group getVariable ["VCM_NOFLANK", false]}) exitWith {};
+private _position = [leader _group, _enemy] call VCM_fnc_ContactPosition;
+if (_position isEqualTo []) exitWith {};
+private _buildings = nearestObjects [_position, ["House", "Building"], 25];
+_buildings = _buildings select {count (_x buildingPos -1) > 3};
+if (_buildings isEqualTo []) exitWith {};
+private _positions = (_buildings select 0) buildingPos -1;
+private _run = _group getVariable ["VCM_RunId", []];
 {
-	if (count ([_x] call BIS_fnc_buildingPositions) > 3) then {_buildingPositions pushback _x;};
-} foreach _nBuildingLst;
-
-if (count _buildingPositions < 1) exitWith {};
-private _finalSel = [_buildingPositions,_enemy,true,"Clear0"] call VCM_fnc_ClstObj; 
-private _tempA = _finalSel call BIS_fnc_buildingPositions;
-private _tempB = _tempA;
-
-//Filter down the closest positions
-private _unitPosition = getposATL _enemy;
-private _acceptableRange = _unitPosition select 2;
-{
-	if ((_x select 2) < (_acceptableRange - 1) || (_x select 2) > (_acceptableRange + 1)) then
-	{
-		_tempA deleteAt _forEachIndex;
-	};
-
-} foreach _tempA;
-
-if (_tempA isEqualTo []) then {_tempA = _tempB;};
-
-private _clstP = [_tempA,_enemy,true,"Clear1"] call VCM_fnc_ClstObj;
-
-{
-	doStop _x;
-	_x doMove _clstP;	
-} foreach (units _group);
+    if (_positions isEqualTo []) exitWith {};
+    if (alive _x && {local _x} && {!isPlayer _x} && {isNull objectParent _x}) then {
+        [_x, _positions deleteAt 0, _run] spawn {
+            params ["_unit", "_position", "_run"];
+            private _group = group _unit;
+            if (!([_unit, _group, _run] call VCM_fnc_ActionValid)) exitWith {};
+            [_unit, _position, 45] call VCM_fnc_MoveTo;
+            if ([_unit, _group, _run] call VCM_fnc_ActionValid && {_unit != leader _group}) then {_unit doFollow leader _group};
+        };
+    };
+} forEach units _group;

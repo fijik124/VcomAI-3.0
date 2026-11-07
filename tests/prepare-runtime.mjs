@@ -1,0 +1,36 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const folder = path.join(root, 'build/runtime/VCM_Regression.VR');
+fs.mkdirSync(folder, { recursive: true });
+fs.cpSync(path.join(root, 'Vcom'), path.join(folder, 'Vcom'), { recursive: true });
+fs.copyFileSync(path.join(root, 'description.ext'), path.join(folder, 'description.ext'));
+fs.appendFileSync(path.join(folder, 'description.ext'), '\nclass Header { gameType="COOP"; minPlayers=1; maxPlayers=1; };\n');
+fs.copyFileSync(path.join(root, 'tests/regression.sqf'), path.join(folder, 'regression.sqf'));
+fs.copyFileSync(path.join(root, 'tests/fire-movement.sqf'), path.join(folder, 'fire-movement.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cover.sqf'), path.join(folder, 'cover.sqf'));
+fs.writeFileSync(path.join(folder, 'init.sqf'), '[] execVM "Vcom\\VcomInit.sqf";\n[] execVM "regression.sqf";\n');
+fs.writeFileSync(path.join(folder, 'mission.sqm'), `version=12;
+class Mission {
+ addOns[]={"A3_Characters_F_BLUFOR","A3_Map_VR"};
+ addOnsAuto[]={"A3_Characters_F_BLUFOR","A3_Map_VR"};
+ randomSeed=1;
+ class Intel { briefingName="VCOM regression"; resistanceWest=0; resistanceEast=1; startWeather=0; forecastWeather=0; year=2035; month=6; day=24; hour=12; minute=0; };
+ class Groups { items=1; class Item0 { side="WEST"; class Vehicles { items=1; class Item0 { position[]={500,0,500}; azimut=0; id=0; side="WEST"; vehicle="B_Soldier_F"; player="PLAY CDG"; leader=1; skill=0.6; init="(group this) setVariable ['Vcm_Disable',true];"; }; }; }; };
+};
+`);
+const template = folder.replaceAll('\\', '/');
+fs.writeFileSync(path.join(root, 'build/runtime/server.cfg'), `hostname="VCOM local regression";
+password="vcom-local-tests";
+steamProtocolMaxDataSize=1024;
+reportingIP="";
+persistent=1;
+BattlEye=0;
+verifySignatures=0;
+allowedFilePatching=0;
+maxPlayers=1;
+class Missions { class Regression { template="${template}"; difficulty="Regular"; }; };
+`);
+console.log(folder);

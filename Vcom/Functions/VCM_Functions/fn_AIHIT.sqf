@@ -1,56 +1,19 @@
-
-/*
-	Author: Genesis, improved by Freddo
-
-	Description:
-		Plays appropiate hit reactions on unit
-
-	Parameter(s):
-		0: OBJECT - Object affected
-		1 (Optional): OBJECT - Object that caused damage
-		2: NUMBER - Level of damage caused
-		3: OBJECT - Object that pulled the trigger
-
-	Returns:
-		NOTHING
-
-	Example1:
-		this addEventHandler ["Hit", {
-			_this call VCM_fnc_AIHIT;
-		}];
-	
-	NOTE:
-		Meant to be called from a "HIT" eventhandler
-*/
+/* Author: Genesis, Freddo. Hit reactions must never create or cancel medical unconsciousness. */
 params ["_unit", "_source", "_damage", "_instigator"];
-
-if (VCM_MEDICALACTIVE) exitWith {};
-
-//Lay down
-private _GetUnitStance = unitPos _unit;
-if !(_GetUnitStance isEqualTo "DOWN") then
-{
-	_unit setUnitPos "DOWN";
-	[_unit,_GetUnitStance] spawn 
-	{
-		params ["_Unit","_Pos"];
-		sleep 5;
-		if (alive _unit) then 
-		{
-			_unit setUnitPos _Pos;
-		};
-	};
-};
-
-if (VCM_RAGDOLL && {_damage > 0.1} && {!(lifestate _unit isEqualTo "INCAPACITATED")} && {VCM_RAGDOLLCHC > (random 100)}) then
-{
-	_unit setUnconscious true;
-	_unit spawn 
-	{
-		sleep 2;
-		_this setUnconscious false;
-		//A check if the unit is still unconscious after a 30 second time. Sometimes AI remain unconscious - this should hopefully prevent this.
-		sleep 30;
-		if (alive _this && {lifeState _this isEqualTo "INCAPACITATED"}) then {_this setUnconscious false;};
-	};
+if (!VCM_MEDICALACTIVE || {!VCM_RAGDOLL} || {_damage <= 0.1} ||
+    {random 100 >= VCM_RAGDOLLCHC} || {!isNull objectParent _unit} ||
+    {lifeState _unit == "INCAPACITATED"} || {_unit getVariable ["VCM_HitStance", ""] != ""}) exitWith {};
+private _group = group _unit;
+private _run = _group getVariable ["VCM_RunId", []];
+if (!([_unit, _group, _run] call VCM_fnc_ActionValid)) exitWith {};
+private _stance = unitPos _unit;
+_unit setVariable ["VCM_HitStance", _stance, true];
+_unit setUnitPos "DOWN";
+[_unit, _group, _run, _stance] spawn {
+    params ["_unit", "_group", "_run", "_stance"];
+    sleep 5;
+    if ([_unit, _group, _run] call VCM_fnc_ActionValid && {VCM_MEDICALACTIVE} && {lifeState _unit != "INCAPACITATED"}) then {
+        _unit setUnitPos _stance;
+        _unit setVariable ["VCM_HitStance", nil, true];
+    };
 };

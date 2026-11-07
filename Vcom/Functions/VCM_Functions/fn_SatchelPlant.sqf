@@ -1,107 +1,35 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Script used to make AI attach explosives to buildings and bring them down if players garrison them.
-
-	Parameter(s):
-		0: OBJECT - Unit to plant satchel
-		1: ARRAY - satchel array
-
-	Returns:
-		NOTHING
-*/
-
-params ["_unit","_satchelArray"];
-
-private _satchelObj = _satchelArray select 0;
-private _satchelMag = _satchelArray select 1;
-
-//Let's see if we can place a scripted version of the item.
-private _testName = _satchelObj + "_scripted";
-private _testMine = _testName createVehiclelocal [0,0,0];
-if !(isNull _testMine) then
-{
-	_satchelObj = _testName;
+/* Author: Genesis. Bounded approach and detonation; no forced unconsciousness or AI feature changes. */
+params ["_unit", "_satchelArray"];
+private _group = group _unit;
+if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+private _run = _group getVariable ["VCM_RunId", []];
+if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {count _satchelArray < 2}) exitWith {};
+_satchelArray params ["_ammo", "_magazine"];
+if (!(_magazine in magazines _unit)) exitWith {};
+private _enemy = _unit call VCM_fnc_ClstEmy;
+if (isNull _enemy) exitWith {};
+private _position = [_unit, _enemy] call VCM_fnc_ContactPosition;
+if (_position isEqualTo [] || {_unit distance2D _position > 200}) exitWith {};
+private _buildings = nearestObjects [_position, ["House", "Building"], 25];
+if (_buildings isEqualTo []) exitWith {};
+private _building = _buildings select 0;
+private _approach = _building getPos [7, _building getDir _unit];
+if (!([_unit, _approach, 45] call VCM_fnc_MoveTo)) exitWith {};
+if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {!(_magazine in magazines _unit)}) exitWith {};
+private _class = [_ammo] call VCM_fnc_MineClass;
+if (_class == "") exitWith {};
+private _charge = createMine [_class, getPosATL _unit, [], 0];
+if (isNull _charge) exitWith {};
+_unit removeMagazine _magazine;
+[_unit, "AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"] remoteExecCall ["VCM_fnc_PlayAnimation", 0];
+private _withdraw = _position getPos [70, _position getDir _unit];
+[_unit, _withdraw, 30] call VCM_fnc_MoveTo;
+private _deadline = diag_tickTime + 60;
+waitUntil {
+    sleep 1;
+    !([_unit, _group, _run] call VCM_fnc_ActionValid) || {isNull _charge} ||
+    {diag_tickTime >= _deadline} || {[side _group, getPosATL _charge, 50] call VCM_fnc_ArtillerySafe}
 };
-
-
-
-private _point = _unit call VCM_fnc_ClstEmy;
-if (_point isEqualTo [] || {isNil "_point"}) exitWith {};
-
-if ((_unit distance _point) < 200) then 
-{
-
-	private _vehicle = vehicle _point;
-	
-	if (_point isEqualTo _vehicle) then 
-	{
-
-		private _nBuilding = (nearestObjects [_point, ["House", "Building"], 50]) select 0;
-		if (isNil "_nBuilding") exitWith {};
-		if ((_nBuilding distance _point) > 40) exitWith {};	
-		[_unit,_nBuilding,(group _unit),_satchelObj,_satchelMag] spawn 
-		{
-			params ["_unit","_nBuilding","_Group","_satchelObj","_satchelMag"];
-			_unit disableAI "TARGET";
-			_unit disableAI "AUTOTARGET";
-			_unit disableAI "CHECKVISIBLE";
-			_unit disableAI "COVER";
-			_unit disableAI "AUTOCOMBAT";
-			doStop _unit; _unit doMove (getPos _nBuilding);
-			
-			private _truth = true;
-			while {_truth} do 
-			{
-				if ((_unit distance _nBuilding) <= 9) then {_truth = false;};
-				sleep 0.25;
-			};
-
-			_unit removeMagazine _satchelMag;
-			private _mine = _satchelObj createVehicle (getposATL _unit);
-			_mine setDir ([_mine, _nBuilding] call BIS_fnc_dirTo);
-			[_unit,"AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"] remoteExec ["Vcm_PMN",0];
-			 _unit action ["SetTimer", _unit, _mine];
-			
-			private _plantPosition = getpos _mine;
-			private _notSafe = true;
-			private _unitSide = (side _unit);
-			_unit doMove (getpos (leader _Group));
-			_unit enableAI "TARGET";
-			_unit enableAI "AUTOTARGET";
-			_unit enableAI "CHECKVISIBLE";
-			_unit enableAI "COVER";
-			_unit enableAI "AUTOCOMBAT";			
-
-			while {_notSafe} do
-			{
-				private _array1 = [];
-				{
-					_array1 pushback _x;
-				} foreach (allUnits select {(side _x) isEqualTo _unitSide && (alive _x)});			
-				_closestFriendly = [_array1,_plantPosition,true,"Satch1"] call VCM_fnc_ClstObj;
-				if !(isNil "_closestFriendly") then
-				{
-					if (_closestFriendly distance2D _plantPosition > 10) then {_notSafe = false;};
-				}
-				else
-				{
-					_notSafe = false;
-				};
-				sleep 5;
-			};
-			_mine setdamage 1;
-			sleep 3;
-			_list = _plantPosition nearObjects ["#crater",5]; 
-			if (_list isEqualTo []) then
-			{
-				deleteVehicle _mine;
-				private _mine2 = "SatchelCharge_Remote_Ammo" createVehicle _plantPosition;
-				_mine2 setdamage 1;
-			};
-			
-		};
-	};
-};
+if ([_unit, _group, _run] call VCM_fnc_ActionValid && {!isNull _charge} &&
+    {[side _group, getPosATL _charge, 50] call VCM_fnc_ArtillerySafe}) then {_charge setDamage 1};
+if ([_unit, _group, _run] call VCM_fnc_ActionValid && {_unit != leader _group}) then {_unit doFollow leader _group};

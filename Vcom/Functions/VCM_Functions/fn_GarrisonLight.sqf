@@ -1,53 +1,21 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Function for telling a group to temporarily garrison a structure. The group will leave it shortly after.
-
-	Parameter(s):
-		0: GROUP
-
-	Returns:
-		NOTHING
-*/
-
-private _leader = (leader _this);
-private _nBuildingLst = nearestObjects [_leader, ["House", "Building"], 50];
-private _buildingPositions = [];
-
+/* Author: Genesis. Temporary garrison: one distinct position per soldier. */
+private _group = _this;
+if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (!([_group] call VCM_fnc_GroupEnabled)) exitWith {};
+private _buildings = nearestObjects [leader _group, ["House", "Building"], 50];
+_buildings = _buildings select {count (_x buildingPos -1) > 3};
+if (_buildings isEqualTo []) exitWith {};
+private _positions = (selectRandom _buildings) buildingPos -1;
+private _run = _group getVariable ["VCM_RunId", []];
 {
-	if (count ([_x] call BIS_fnc_buildingPositions) > 3) then {_buildingPositions pushback _x;};
-} foreach _nBuildingLst;
-
-//Exit if no compatible buildings found
-if (_buildingPositions isEqualTo []) exitWith {};
-
-private _tempA = [(selectRandom _buildingPositions)] call BIS_fnc_buildingPositions;
-private _groupUnits = units _this;
-if (count _tempA > 0) then
-{
-	{
-		private _foot = isNull objectParent _x;
-		if (_foot) then
-		{
-			private _buildingLocation = selectRandom _tempA;
-			if !(isNil "_buildingLocation") then
-			{
-				_x doMove _buildingLocation;
-				[_x,_buildingLocation] spawn 
-				{
-					params ["_leader","_buildingLocation"];
-					if (isNil "_buildingLocation") exitWith {};
-					while {(alive _leader) && {_leader distance2D _buildingLocation < 1.3}} do
-					{
-						sleep 3;
-						_leader doMove _buildingLocation;
-					};
-				};
-				private _rmv = _tempA findIf {_buildingLocation isEqualTo _x};
-				_tempA deleteAt _rmv;
-			};
-		};
-	} foreach _groupUnits;
-};
+    if (_positions isEqualTo []) exitWith {};
+    if (alive _x && {local _x} && {!isPlayer _x} && {isNull objectParent _x}) then {
+        [_x, _positions deleteAt 0, _run] spawn {
+            params ["_unit", "_position", "_run"];
+            private _group = group _unit;
+            if (!([_unit, _group, _run] call VCM_fnc_ActionValid)) exitWith {};
+            [_unit, _position, 30] call VCM_fnc_MoveTo;
+            if ([_unit, _group, _run] call VCM_fnc_ActionValid && {_unit != leader _group}) then {_unit doFollow leader _group};
+        };
+    };
+} forEach units _group;

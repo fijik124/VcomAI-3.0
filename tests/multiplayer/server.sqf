@@ -1,0 +1,215 @@
+if (!isServer) exitWith {};
+waitUntil {sleep 0.1; missionNamespace getVariable ["VCM_ServerReady", false]};
+VCM_MP_Reports = createHashMap;
+VCM_MP_Count = 0;
+VCM_MP_Failures = 0;
+private _assert = {
+    params ["_condition", "_name"];
+    VCM_MP_Count = VCM_MP_Count + 1;
+    if (!_condition) then {VCM_MP_Failures = VCM_MP_Failures + 1};
+    diag_log format ["VCM_MP_%1: %2", ["FAIL", "PASS"] select _condition, _name];
+};
+private _finish = {diag_log format ["VCM_MP_DONE: %1 checks, %2 failures", VCM_MP_Count, VCM_MP_Failures]};
+private _await = {
+    params ["_condition", ["_seconds", 15]];
+    private _deadline = diag_tickTime + _seconds;
+    waitUntil {sleep 0.1; call _condition || {diag_tickTime > _deadline}};
+    call _condition
+};
+private _owners = {
+    private _result = [];
+    {if ((_x find ":joined") >= 0) then {_result pushBack parseNumber ((_x splitString ":") select 0)}} forEach keys VCM_MP_Reports;
+    _result sort true;
+    _result
+};
+private _probe = {
+    params ["_owner", "_label", ["_groups", []]];
+    private _key = format ["%1:%2", _owner, _label];
+    if (_owner == 2) then {[_label, _groups] call VCM_test_fnc_Probe} else {
+        [_label, _groups] remoteExecCall ["VCM_test_fnc_Probe", _owner];
+    };
+    [{!isNil {VCM_MP_Reports get _key}}, 15] call _await;
+    VCM_MP_Reports getOrDefault [_key, []]
+};
+private _transfer = {
+    params ["_group", "_owner", "_label"];
+    private _accepted = _group setGroupOwner _owner;
+    [_accepted, _label + ": engine accepts transfer"] call _assert;
+    private _arrived = [{groupOwner _group == _owner}, 15] call _await;
+    [_arrived, _label + ": group reaches requested owner"] call _assert;
+    sleep 3;
+};
+VCM_WARNDIST = 731;
+VCM_COVERSEARCH = false;
+VCM_SIDEENABLED = [west, east];
+(VCM_AIDIFA select 0) set [1, 0.19];
+VCM_FIREMOVEMENT = false;
+VCM_ADVANCEDMOVEMENT = false;
+VCM_StealVeh = false;
+VCM_FRMCHANGE = false;
+VCM_ARTYENABLE = false;
+sleep 2;
+private _initialSettings = call VCM_fnc_SettingsSnapshot;
+diag_log "VCM_MP_SERVER_READY";
+private _nextStatus = diag_tickTime;
+private _connected = [{
+    if (diag_tickTime >= _nextStatus) then {
+        diag_log format ["VCM_MP_CONNECTION: users=%1 slots=%2", allUsers, (entities "HeadlessClient_F") apply {[owner _x, isPlayer _x]}];
+        _nextStatus = diag_tickTime + 10;
+    };
+    count (call _owners) >= 1
+}, 75] call _await;
+[_connected, "first headless client joins the running mission"] call _assert;
+if (!_connected) exitWith {call _finish};
+private _first = (call _owners) select 0;
+private _joined = VCM_MP_Reports get format ["%1:joined", _first];
+[_joined select 0, "first headless client reports didJIP"] call _assert;
+[_joined select 1, "first headless client initializes VCOM settings"] call _assert;
+[(_joined select 2) isEqualTo _initialSettings, "JIP receives server side and skill arrays"] call _assert;
+private _forgedKey = format ["%1:forged", _first];
+[{!isNil {VCM_MP_Reports get _forgedKey}}, 10] call _await;
+[VCM_MP_Reports getOrDefault [_forgedKey, false], "client-originated settings RPC is rejected"] call _assert;
+private _requestKey = format ["%1:requested", _first];
+[{!isNil {VCM_MP_Reports get _requestKey}}, 10] call _await;
+[VCM_MP_Reports getOrDefault [_requestKey, false], "headless client receives an explicitly requested settings reply"] call _assert;
+
+VCM_WARNDIST = 946;
+VCM_COVERSEARCH = true;
+(VCM_AIDIFA select 0) set [1, 0.27];
+sleep 2;
+private _updatedSettings = call VCM_fnc_SettingsSnapshot;
+private _updated = [_first, "updated"] call _probe;
+[count _updated > 0 && {(_updated select 2) isEqualTo _updatedSettings}, "live settings changes reach existing headless client"] call _assert;
+diag_log "VCM_MP_SECOND_READY";
+_connected = [{count (call _owners) >= 2}, 75] call _await;
+[_connected, "second headless client joins later"] call _assert;
+if (!_connected) exitWith {call _finish};
+private _second = (call _owners) select 1;
+_joined = VCM_MP_Reports get format ["%1:joined", _second];
+[_joined select 0, "second headless client reports didJIP"] call _assert;
+[(_joined select 2) isEqualTo _updatedSettings, "later join receives current settings rather than defaults"] call _assert;
+
+private _group = createGroup [west, true];
+_group setVariable ["VCM_Skilldisable", true, true];
+private _unit = _group createUnit ["B_Soldier_F", [1000,1000,0], [], 0, "NONE"];
+_unit allowDamage false;
+private _building = createVehicle ["Land_i_House_Big_01_V1_F", [1010,1010,0], [], 0, "NONE"];
+private _hold = _group addWaypoint [[1010,1010,0], 0];
+_hold setWaypointName "MP_AUTHORED_HOLD";
+_hold setWaypointType "HOLD";
+_group setCurrentWaypoint _hold;
+_group call VCM_fnc_SquadExc;
+sleep 1;
+["garrison", _group, "garrison"] call VCM_test_fnc_Scenario;
+sleep 0.5;
+[_group getVariable ["VCM_GarrisonBusy", false], "garrison is active before ownership transfer"] call _assert;
+private _serverRun = _group getVariable ["VCM_RunId", []];
+[_group, _first, "server to HC during garrison"] call _transfer;
+private _serverState = [2, "garrison-old", [_group]] call _probe;
+private _clientState = [_first, "garrison-new", [_group]] call _probe;
+private _old = (_serverState param [3, []]) param [0, []];
+private _new = (_clientState param [3, []]) param [0, []];
+[count _old > 0 && {_old select 2 == 0}, "old owner removes its controller"] call _assert;
+[count _new > 0 && {_new select 0} && {_new select 2 == 1}, "new owner runs exactly one controller"] call _assert;
+[count _new > 0 && {(_new select 3) isNotEqualTo _serverRun}, "new owner uses a fresh run token"] call _assert;
+[(waypoints _group) findIf {waypointName _x == "MP_AUTHORED_HOLD"} >= 0, "authored HOLD survives transfer"] call _assert;
+[count _new > 0 && {(_new select 5 select 0 select 4)}, "pathfinding remains enabled on the new owner"] call _assert;
+
+["releaseHold", _group, "release"] remoteExec ["VCM_test_fnc_Scenario", _first];
+sleep 0.75;
+["move", _group, "move-cancelled", [1500,1500,0]] remoteExec ["VCM_test_fnc_Scenario", _first];
+sleep 1;
+private _moving = [_first, "move-started", [_group]] call _probe;
+private _movingState = (_moving param [3, []]) param [0, []];
+[count _movingState > 0 && {(_movingState select 5 select 0 select 3) isNotEqualTo []}, "movement is active on HC before transfer"] call _assert;
+[_group, 2, "HC to server during movement"] call _transfer;
+private _moveKey = format ["%1:move-cancelled", _first];
+[{!isNil {VCM_MP_Reports get _moveKey}}, 10] call _await;
+private _moveResult = VCM_MP_Reports getOrDefault [_moveKey, [true]];
+[!(_moveResult select 0) && {!(_moveResult param [2, true])}, "old owner's movement script cancels after losing locality"] call _assert;
+_serverState = [2, "return-new", [_group]] call _probe;
+_clientState = [_first, "return-old", [_group]] call _probe;
+_new = (_serverState param [3, []]) param [0, []];
+_old = (_clientState param [3, []]) param [0, []];
+[count _new > 0 && {_new select 2 == 1}, "server restarts a controller when ownership returns"] call _assert;
+[count _old > 0 && {_old select 2 == 0}, "headless client removes its previous controller"] call _assert;
+
+// Removing the HOLD lets the new owner clear inherited garrison state.
+_hold setWaypointType "MOVE";
+sleep 1;
+[!(_group getVariable ["VCM_GarrisonBusy", false]), "garrison state releases after its order changes"] call _assert;
+_unit addBackpack "B_HMG_01_weapon_F";
+private _opfor = createGroup [east, true];
+_opfor setVariable ["Vcm_Disable", true, true];
+private _target = _opfor createUnit ["O_Soldier_F", [1200,1000,0], [], 0, "NONE"];
+_target disableAI "ALL";
+_target allowDamage false;
+_group reveal [_target, 4];
+["deploy", _group, "deploy"] call VCM_test_fnc_Scenario;
+sleep 0.25;
+[_unit getVariable ["VCM_DeployBusy", false], "static deployment starts before transfer"] call _assert;
+[_group, _first, "server to HC during static deployment"] call _transfer;
+sleep 1;
+[backpack _unit == "B_HMG_01_weapon_F", "cancelled deployment keeps the carried weapon"] call _assert;
+[count (nearestObjects [_unit, ["StaticWeapon"], 20]) == 0, "cancelled deployment removes its temporary empty static"] call _assert;
+
+VCM_FIREMOVEMENT = true;
+VCM_ADVANCEDMOVEMENT = true;
+sleep 2;
+private _boundGroup = createGroup [west, true];
+_boundGroup setVariable ["VCM_Skilldisable", true, true];
+private _boundSoldiers = [];
+private _positions = [[6000,5985,0], [6000,6015,0], [5995,5980,0], [5995,6020,0]];
+{
+    private _soldier = _boundGroup createUnit [_x, _positions select _forEachIndex, [], 0, "NONE"];
+    _soldier setPosATL (_positions select _forEachIndex);
+    _soldier setDir 90;
+    _soldier allowDamage false;
+    _boundSoldiers pushBack _soldier;
+} forEach ["B_Soldier_F", "B_Soldier_F", "B_Soldier_F", "B_Soldier_AR_F"];
+private _boundTarget = _opfor createUnit ["O_Soldier_F", [6200,6000,0], [], 0, "NONE"];
+_boundTarget disableAI "ALL";
+_boundTarget allowDamage false;
+_boundGroup setCombatMode "YELLOW";
+_boundGroup setBehaviour "COMBAT";
+_boundGroup call VCM_fnc_SquadExc;
+sleep 0.5;
+_boundGroup reveal [_boundTarget, 4];
+["bound", _boundGroup, "bound"] call VCM_test_fnc_Scenario;
+sleep 0.25;
+private _boundState = _boundGroup getVariable ["VCM_BoundState", []];
+[_boundState isNotEqualTo [], "coordinated movement is active before transfer"] call _assert;
+private _oldBoundKey = _boundState param [0, []];
+[_boundGroup, _first, "server to HC during coordinated movement"] call _transfer;
+_serverState = [2, "bound-old", [_boundGroup]] call _probe;
+_clientState = [_first, "bound-new", [_boundGroup]] call _probe;
+_old = (_serverState param [3, []]) param [0, []];
+_new = (_clientState param [3, []]) param [0, []];
+[count _old > 0 && {_old select 2 == 0}, "coordinated squad releases the old controller"] call _assert;
+[count _new > 0 && {_new select 2 == 1}, "coordinated squad acquires one HC controller"] call _assert;
+private _oldKeysGone = count _new > 0 && {(_new select 5) findIf {(_x select 2) isEqualTo _oldBoundKey} < 0};
+[_oldKeysGone, "new owner releases inherited maneuver reservations"] call _assert;
+
+diag_log "VCM_MP_DISCONNECT_READY";
+private _recovered = [{groupOwner _group == 2}, 35] call _await;
+[_recovered, "disconnect returns group ownership to server"] call _assert;
+sleep 3;
+_serverState = [2, "disconnect-recovery", [_group]] call _probe;
+_new = (_serverState param [3, []]) param [0, []];
+[count _new > 0 && {_new select 2 == 1}, "server controller recovers after HC disconnect"] call _assert;
+_serverState = [2, "bound-recovery", [_boundGroup]] call _probe;
+_new = (_serverState param [3, []]) param [0, []];
+[groupOwner _boundGroup == 2 && {count _new > 0} && {_new select 2 == 1}, "coordinated squad also recovers after disconnect"] call _assert;
+[(waypoints _group) findIf {waypointName _x == "MP_AUTHORED_HOLD"} >= 0, "authored route survives disconnect recovery"] call _assert;
+_group setVariable ["Vcm_Disable", true, true];
+_boundGroup setVariable ["Vcm_Disable", true, true];
+sleep 0.5;
+deleteVehicle _unit;
+deleteVehicle _target;
+deleteVehicle _building;
+{deleteVehicle _x} forEach _boundSoldiers;
+deleteVehicle _boundTarget;
+deleteGroup _boundGroup;
+deleteGroup _group;
+deleteGroup _opfor;
+call _finish;

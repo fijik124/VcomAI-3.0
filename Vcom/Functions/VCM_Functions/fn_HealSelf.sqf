@@ -1,24 +1,6 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Makes a unit heal itself.
-
-	Parameter(s):
-		0: OBJECT - Unit
-
-	Returns:
-		BOOLEAN - If unit able to treat self: TRUE, else FALSE
-*/
-
-private _CanHeal = false;
-
-if (alive _this && {"FirstAidKit" in (items _this)}) then 
-{
-	_this action ["HealSoldierSelf", _this];
-	_CanHeal = true;
-	if VCM_DEBUG then {systemChat format ["%1 healing self", _this]};
-};
-
-_CanHeal
+/* Author: Genesis. Use the vanilla action; never synthesize a full heal. */
+private _unit = _this;
+if (!VCM_MEDICALACTIVE || {!local _unit} || {!alive _unit} || {isPlayer _unit} ||
+    {lifeState _unit == "INCAPACITATED"} || {!("FirstAidKit" in items _unit)}) exitWith {false};
+_unit action ["HealSoldierSelf", _unit];
+true

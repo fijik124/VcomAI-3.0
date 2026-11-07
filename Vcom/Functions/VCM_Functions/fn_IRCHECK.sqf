@@ -1,64 +1,32 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Reveals players using IR-laser to enemies with NVGs.
-
-	Parameter(s):
-		NONE
-
-	Returns:
-		NOTHING
-*/
-
-while {alive player && {Vcm_ActivateAI}} do
-{
-	if (player isIRLaserOn currentWeapon player) then
-	{
-		private _side = side player;
-		
-		private _wepDir = (player weaponDirection currentWeapon player) vectorMultiply 1000;
-		private _eyePosS = eyePos player;
-		private _eyePosB = [_eyePosS select 0,_eyePosS select 1,(_eyePosS select 2 - 0.25)];
-		private _endSight = _eyePosB vectoradd _wepDir;
-		private _lineInter = lineIntersectsSurfaces [_eyePosB, _endSight, player, player, true, 1];
-		
-		if !(_lineInter isEqualTo []) then
-		{
-			private _finalPos = (_lineInter select 0 select 0);
-			private _enemies = allUnits select {[_side,(side _x)] call BIS_fnc_sideIsEnemy && (currentVisionMode _x isEqualTo 1)};
-			private _dirPlayer = getdir Player;
-			if !(_enemies isEqualTo []) then
-			{
-				private _startPos = (getpos player);
-				private _toalDist = _startPos distance2D _finalPos;
-				private _chunks = round (_toalDist/100);
-				private _chunkN = 0;
-				while {_chunks > _chunkN} do
-				{
-					_startPos = [_startPos,100,_dirPlayer] call BIS_fnc_relPos;
-					private _ne = [_enemies,_startPos,true,"IR"] call VCM_fnc_ClstObj;
-					if (_ne distance2D _startPos < 65) exitWith 
-					{				
-						[
-							[_ne,player],
-							{
-								params ["_ne","_unit"];
-								if (local _ne) then
-								{
-									private _kv = _ne knowsAbout _unit;
-									_ne reveal [_unit,(_kv + 0.4)];
-								};								
-							}
-						] remoteExec ["bis_fnc_call",0];		
-					};					
-					_chunkN = _chunkN + 1;
-					sleep 0.1;
-				};			
-			};
-			sleep 0.25;
-		};	
-	};
-	sleep 0.25;
+/* Author: Genesis. Server-owned laser observations; no remotely supplied code. */
+if (!isServer) exitWith {};
+while {true} do {
+    if (Vcm_ActivateAI) then {
+        {
+            private _player = _x;
+            if (alive _player && {_player isIRLaserOn currentWeapon _player}) then {
+                private _eye = eyePos _player;
+                private _end = _eye vectorAdd ((_player weaponDirection currentWeapon _player) vectorMultiply 1000);
+                private _hits = lineIntersectsSurfaces [_eye, _end, _player, vehicle _player, true, 1];
+                if (count _hits > 0) then {
+                    private _spot = _hits select 0 select 0;
+                    private _listeners = [];
+                    {
+                        if (!isPlayer _x && {currentVisionMode _x == 1} &&
+                            {[side group _player, side group _x] call BIS_fnc_sideIsEnemy} &&
+                            {[_x, "VIEW", vehicle _x] checkVisibility [eyePos _x, _spot] > 0.1}) then {
+                            _listeners pushBackUnique leader group _x;
+                        };
+                    } forEach (_player nearEntities ["Man", 300]);
+                    private _owners = [];
+                    {_owners pushBackUnique owner _x} forEach _listeners;
+                    {
+                        private _owner = _x;
+                        [_listeners select {owner _x == _owner}, _player, 0.1] remoteExecCall ["VCM_fnc_KnowAbout", _owner];
+                    } forEach _owners;
+                };
+            };
+        } forEach allPlayers;
+    };
+    sleep 1;
 };

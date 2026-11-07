@@ -1,109 +1,21 @@
-/*
-	Author: Genesis
-
-	Description:
-		Plants a mine
-
-	Parameter(s):
-		0: OBJECT - Unit to plant a mine
-		1: ARRAY - ???
-
-	Returns:
-		NOTHING
-*/
-
+/* Author: Genesis. Use native mine simulation so locality changes do not orphan a scripted trigger. */
 params ["_unit", "_mineArray"];
-
-if (VCM_MINECHANCE < (round (random 100)) || {isPlayer _unit}) exitWith {};
-
-private _mineType = _mineArray select 0;
-
-//Let's see if we can place a scripted version of the item.
-private _testName = _mineType + "_scripted";
-private _testMine = _testName createVehiclelocal [0,0,0];
-if !(isNull _testMine) then
-{
-	_mineType = _testName;
-};
-
-private _magazineName = _mineArray select 1;
-
-if (_mineArray isEqualTo []) exitWith {};
-
-_unit removeMagazine _magazineName;
-
-//systemchat format ["I %1",_unit];
-private _nearestEnemy = _unit call VCM_fnc_ClstEmy;
-if (_nearestEnemy isEqualTo [] || {isNil "_nearestEnemy"}) exitWith {};
-
-private _mine = "";
-
-if (_nearestEnemy distance2D _unit < 100) then
-{
-	//_mine = createMine [_mineType,getposATL _unit, [], 2];
-	private _mPos = _unit modeltoworld [0,1,0.05];
-	_mine = _mineType createVehicle _mPos;
-	_mine setDir ([_mine, _nearestEnemy] call BIS_fnc_dirTo);
-	_mine setpos _mPos;
-	_mine setposATL (getposATL _mine);
-	[_unit,"AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"] remoteExec ["Vcm_PMN",0];
-}
-else
-{
-	_nearRoads = _unit nearRoads 50;
-	if (count _nearRoads > 0) then 
-	{
-		private _closestRoad = [_nearRoads,_unit,true,"2"] call VCM_fnc_ClstObj;
-		doStop _unit;
-		_unit doMove (getpos _closestRoad);
-		waitUntil {!(alive _unit) || _unit distance2D _closestRoad < 7};
-		private _mPos = _unit modeltoworld [0,1,0.05];
-		_mine = _mineType createVehicle _mPos;
-		_mine setDir ([_mine, _nearestEnemy] call BIS_fnc_dirTo);
-		_mine setpos _mPos;
-		_mine setposATL (getposATL _mine);
-		//_mine = createMine [_mineType,getposATL _closestRoad, [], 3];
-		[_unit,"AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"] remoteExec ["Vcm_PMN",0];
-	}
-	else
-	{
-		//_mine = createMine [_mineType,getposATL _unit, [], 3];
-		private _mPos = _unit modeltoworld [0,1,0.05];
-		_mine = _mineType createVehicle _mPos;
-		_mine setDir ([_mine, _nearestEnemy] call BIS_fnc_dirTo);
-		_mine setpos _mPos;
-		_mine setposATL (getposATL _mine);
-		[_unit,"AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"] remoteExec ["Vcm_PMN",0];
-	};
-};
-
-_unitSide = (side _unit);
-
-
-if (_mine isEqualTo "") exitWith {};
-
-VCOM_mineArray pushBack [_Mine,_unitSide];
-[_Mine, false] remoteExecCall ["enableSimulationGlobal",2];
-
-/*
-[_mine,_unitSide] spawn 
-{
-	params ["_Mine","_unitSide"];
-	
-	
-	
-	private _NotSafe = true;
-	[_Mine, false] remoteExecCall ["enableSimulationGlobal",2];
-	waitUntil
-	{
-		private _Array1 = (allUnits select {!(side _x isEqualTo _unitSide)});
-		private _ClosestEnemy = [0,0,0];
-		_ClosestEnemy = [_Array1,_Mine,true,"2"] call VCM_fnc_ClstObj;
-		if (_ClosestEnemy distance _Mine < 2.5) then {_NotSafe = false;};
-		sleep 0.1;	
-		(!(alive _mine) || {!(_NotSafe)})
-	};
-	[_Mine, true] remoteExecCall ["enableSimulationGlobal",2];
-	sleep 0.25;
-	_Mine setdamage 1;
-};
+private _group = group _unit;
+if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+private _run = _group getVariable ["VCM_RunId", []];
+if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {count _mineArray < 2} || {random 100 >= VCM_MINECHANCE}) exitWith {};
+_mineArray params ["_mineType", "_magazine"];
+if (!(_magazine in magazines _unit) || {!isClass (configFile >> "CfgAmmo" >> _mineType)}) exitWith {};
+private _enemy = _unit call VCM_fnc_ClstEmy;
+if (isNull _enemy) exitWith {};
+private _position = _unit modelToWorld [0, 1, 0];
+private _class = [_mineType] call VCM_fnc_MineClass;
+if (_class == "") exitWith {};
+private _mine = createMine [_class, _position, [], 0];
+if (isNull _mine) exitWith {};
+_unit removeMagazine _magazine;
+private _knownPosition = [_unit, _enemy] call VCM_fnc_ContactPosition;
+if (count _knownPosition > 0) then {_mine setDir (_position getDir _knownPosition)};
+side _group revealMine _mine;
+VCOM_MINEARRAY pushBack [_mine, side _group];
+[_unit, "AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"] remoteExecCall ["VCM_fnc_PlayAnimation", 0];

@@ -1,27 +1,8 @@
-
-/*
-	Author: Genesis
-
-	Description:
-		Ensures AI reaches their rearm objective.
-
-	Parameter(s):
-		0: OBJECT - the unit to rearm
-		1: ARRAY - location to rearm at.
-
-	Returns:
-		NOTHING
-		
-	Example:
-		[unit1, getPos deadUnit] call VCM_fnc_ActRearm;
-*/
-
-params ["_unitToRearm","_rearmLocation"];
-
-while {(_unitToRearm distance _rearmLocation) > 5 && {(_unitToRearm distance _rearmLocation) < 200}} do
-{
-	_unitToRearm domove (getpos _rearmLocation);
-	sleep 4;
-};
-
-	_unitToRearm action ["rearm", _rearmLocation];
+/* Author: Genesis. Timed rearm approach; stop when dead, disabled, or transferred. */
+params ["_unit", "_source", ["_run", []]];
+private _group = group _unit;
+if (_run isEqualTo []) then {_run = _group getVariable ["VCM_RunId", []]};
+if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {isNull _source}) exitWith {};
+private _arrived = [_unit, getPosATL _source, 40, {!isNull _source}] call VCM_fnc_MoveTo;
+if (_arrived && {!isNull _source} && {_unit distance _source < 6}) then {_unit action ["Rearm", _source]};
+if ([_unit, _group, _run] call VCM_fnc_ActionValid && {_unit != leader _group}) then {_unit doFollow leader _group};

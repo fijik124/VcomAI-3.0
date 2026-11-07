@@ -2,7 +2,7 @@
 	Author: Genesis
 
 	Description:
-		
+
 
 	Parameter(s):
 		0: GROUP
@@ -12,6 +12,7 @@
 */
 
 params ["_Group"];
+if (!([_Group] call VCM_fnc_GroupEnabled)) exitWith {[false, []]};
 private _Leader = leader _group;
 
 //Are they in a vehicle?
@@ -40,7 +41,7 @@ if (count _VehArr > 0) then
 			if (local _x) then
 			{
 				private _NE = _leader call VCM_fnc_ClstEmy;
-				if (_NE distance2D _leader <= VCM_DISEMBARKRANGE) then
+				if (!isNull _NE && {_NE distance2D _leader <= VCM_DISEMBARKRANGE}) then
 				{
 					_x setUnloadInCombat [true, VCM_TURRETUNLOAD];
 					if (VCM_Debug) then {diag_log format ["VEHICLECHECK: Group can unload! %1",_group];};
@@ -55,7 +56,7 @@ if (count _VehArr > 0) then
 					else
 					{
 						_x setUnloadInCombat [false, false];
-						if (VCM_Debug) then {diag_log format ["VEHICLECHECK: Group cant unload! %1",_group];};					
+						if (VCM_Debug) then {diag_log format ["VEHICLECHECK: Group cant unload! %1",_group];};
 					};
 				};
 			};
@@ -65,7 +66,7 @@ if (count _VehArr > 0) then
 	{
 		//If we only want to impact turrets
 		{
-			_x setUnloadInCombat [true, VCM_TURRETUNLOAD];
+			if (local _x) then {_x setUnloadInCombat [true, VCM_TURRETUNLOAD]};
 		} foreach _VehArr;
 	};
 };

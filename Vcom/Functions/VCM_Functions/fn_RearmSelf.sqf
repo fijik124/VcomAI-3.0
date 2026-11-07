@@ -12,10 +12,12 @@
 		NOTHING
 */
 
+if (!([_this] call VCM_fnc_GroupEnabled)) exitWith {};
+if (_this getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+private _run = _this getVariable ["VCM_RunId", []];
 private _magLimit = VCM_AIMagLimit;
 {
 	private _orgUnit = _x;
-if !(vehicle _x isEqualTo _x) exitWith {};
 
 //The first thing we want to do. Is figure out what ammo this unit is using.
 private _curMag = currentMagazine _x;
@@ -36,7 +38,7 @@ if (_magCount < _magLimit) then {
 		if (alive _x && {_x isKindOf "Man"}) then {_potRearm = _potRearm - [_x];};
 		true;
 	} count _potRearm;
-	
+
 	//If men are around see if we can take ammo from them first.
 	_stop = false;
 	if (count _potRearm != 0) then {
@@ -51,7 +53,7 @@ if (_magCount < _magLimit) then {
 			if (isNil "_mags") then {_mags = [];};
 			{
 				if (_x isEqualTo _curMag) exitwith {
-					[_orgUnit,_unit] spawn VCM_fnc_ActRearm; 
+					[_orgUnit,_unit,_run] spawn VCM_fnc_ActRearm;
 					_stop = true;
 				};
 				true;
@@ -62,4 +64,4 @@ if (_magCount < _magLimit) then {
 	};
 };
 true;
-} count (units _this);
+} forEach ((units _this) select {alive _x && {local _x} && {!isPlayer _x} && {isNull objectParent _x}});

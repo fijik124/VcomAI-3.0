@@ -1,85 +1,51 @@
-//Parameters
-VCM_PublicScript = compileFinal "[] call (_this select 0);";
-VCM_ServerAsk = compileFinal "(_this select 1) publicVariableClient (_this select 0);";
-
-if (isServer) then
-{
-	if (isFilePatchingEnabled) then
-	{
-		private _Filecheck = loadFile "\userconfig\VCOM_AI\AISettingsV3.hpp";
-
-		if !(_FileCheck isEqualTo "") then
-		{
-			[] call compile preprocessFileLineNumbers "\userconfig\VCOM_AI\AISettingsV3.hpp";
-			[Vcm_Settings] remoteExec ["VCM_PublicScript",0,false];
-		}
-		else
-		{
-			[] call compile preprocessFileLineNumbers "Vcom\Functions\VCOMAI_DefaultSettings.sqf";
-			[Vcm_Settings] remoteExec ["VCM_PublicScript",0,false];
-		};
-	}
-	else
-	{
-			[] call compile preprocessFileLineNumbers "Vcom\Functions\VCOMAI_DefaultSettings.sqf";
-			[Vcm_Settings] remoteExec ["VCM_PublicScript",0,false];
-	};
-}
-else
-{
-	private _id = clientOwner;
-	["Vcm_Settings",_id] remoteExec ["VCM_ServerAsk",2,false];
-	waitUntil {!(isNil "Vcm_Settings")};
-	[] call Vcm_Settings;
+if (missionNamespace getVariable ["VCM_Started", false]) exitWith {};
+VCM_Started = true;
+[] call VCM_fnc_InitSettings;
+waitUntil {sleep 0.05; VCM_CBAReady};
+if (isServer) then {VCM_ServerReady = true; [] spawn VCM_fnc_IRCHECK};
+if (!isServer) then {
+    private _nextRequest = -1;
+    waitUntil {
+        if (diag_tickTime > _nextRequest) then {
+            [player] remoteExecCall ["VCM_fnc_RequestSettings", 2];
+            _nextRequest = diag_tickTime + 5;
+        };
+        sleep 0.1;
+        VCM_SettingsReady
+    };
 };
-
-waitUntil {!(isNil "VCM_AIMagLimit")};
-
-//Mod checks
-//ACE CHECK
-if (!(isNil "ACE_Medical_enableFor") && {ACE_Medical_enableFor isEqualTo 1}) then {VCM_MEDICALACTIVE = false;} else {VCM_MEDICALACTIVE = true;};
-//CBA CHECK
-if (isClass(configFile >> "CfgPatches" >> "cba_main")) then {CBAACT = true;} else {CBAACT = false;};
-
-//Global actions compiles
-Vcm_PMN = compileFinal "(_this select 0) playMoveNow (_this select 1);";
-Vcm_SM = compileFinal "(_this select 0) switchMove (_this select 1);";
-Vcm_PAN = compileFinal "(_this select 0) playActionNow (_this select 1);";
 VCOM_MINEARRAY = [];
-
-//OnEachFrame monitor for mines. Should make them more responsive, without a significant impact on FPS.
-["VCMMINEMONITOR", "onEachFrame", {[] call VCM_fnc_MineMonitor}] call BIS_fnc_addStackedEventHandler;
-
-//Below is loop to check for new AI spawning in to be added to the list
-[] spawn
-{
-	sleep 2;
-	if (hasInterface) then
-	{
-		//Event handlers for players	
-		player addEventHandler ["Fired",{_this call VCM_fnc_HearingAids;}];
-		player spawn VCM_fnc_IRCHECK;
-		player addEventHandler ["Respawn",{_this spawn VCM_fnc_IRCHECK;}];
-	};
-	
-	while {true} do 
-	{
-		if (Vcm_ActivateAI) then
-		{
-			{
-				if (local _x && {simulationEnabled (leader _x)} && {!(isplayer (leader _x))} && {(leader _x) isKindOf "Man"}) then 
-				{
-					private _Grp = _x;
-						if !(_Grp in VcmAI_ActiveList) then //{!(VCM_SIDEENABLED findIf {_x isEqualTo (side _Grp)} isEqualTo -1)}
-						{
-							if !(((units _Grp) findIf {alive _x}) isEqualTo -1) then
-							{
-								_x call VCM_fnc_SquadExc;
-							};
-						};
-				};
-			} foreach allGroups;
-		};
-		sleep 10;
-	};
+VCM_RunSerial = 0;
+if (isServer) then {
+    [] spawn {
+        private _previous = [];
+        while {true} do {
+            private _settings = call VCM_fnc_SettingsSnapshot;
+            if !(_settings isEqualTo _previous) then {
+                [_settings] remoteExecCall ["VCM_fnc_ApplySettings", -2, "VCM_Settings"];
+                _previous = _settings;
+            };
+            sleep 1;
+        };
+    };
+};
+// A fixed update rate prevents frame rate from multiplying mine scans.
+[] spawn {while {true} do {[] call VCM_fnc_MineMonitor; sleep 0.1}};
+if (hasInterface) then {
+    [] spawn {
+        waitUntil {sleep 0.1; !isNull player};
+        player addEventHandler ["Fired", {_this call VCM_fnc_HearingAids}];
+        player addEventHandler ["Respawn", {
+            (_this select 0) addEventHandler ["Fired", {_this call VCM_fnc_HearingAids}];
+        }];
+    };
+};
+while {true} do {
+    {
+        if ([_x] call VCM_fnc_GroupEnabled && {simulationEnabled leader _x} &&
+            {!(_x in VcmAI_ActiveList)} && {leader _x isKindOf "Man"}) then {
+            _x call VCM_fnc_SquadExc;
+        };
+    } forEach allGroups;
+    sleep 2;
 };
