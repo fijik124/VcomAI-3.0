@@ -1,6 +1,7 @@
 /* Author: Genesis. Bounded static occupation; never take over an occupied weapon. */
 private _group = _this;
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (!([_group] call VCM_fnc_GroupEnabled)) exitWith {};
 private _units = (units _group) select {alive _x && {local _x} && {!isPlayer _x} && {isNull objectParent _x}};
 private _weapons = (nearestObjects [leader _group, ["StaticWeapon"], 150]) select {alive _x && {isNull assignedGunner _x} && {isNull gunner _x}};

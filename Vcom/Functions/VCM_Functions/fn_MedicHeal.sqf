@@ -11,5 +11,5 @@ if (VCM_MEDICALACTIVE && {[_medic, _group, _run] call VCM_fnc_ActionValid} && {a
 if (_run isEqualTo (_group getVariable ["VCM_RunId", []])) then {
     _medic setVariable ["VCM_MBUSY", false];
     _patient setVariable ["VCM_PatientBusy", false];
-    if ([_medic, _group, _run] call VCM_fnc_ActionValid && {_medic != leader _group}) then {_medic doFollow leader _group};
+    if ([_medic, _group, _run] call VCM_fnc_CanFollow) then {_medic doFollow leader _group};
 };

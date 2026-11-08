@@ -1,10 +1,23 @@
 param(
+    [switch]$AdvancedOnly,
     [string]$ArmaDirectory = "${env:ProgramFiles(x86)}/Steam/steamapps/common/Arma 3",
-    [int]$TimeoutSeconds = 240,
-    [string[]]$Mods = @()
+    [int]$TimeoutSeconds = 360,
+    [string[]]$Mods = @(),
+    [switch]$Addon
 )
 $ErrorActionPreference = 'Stop'
-& node (Join-Path $PSScriptRoot 'prepare-multiplayer.mjs')
+$prepareArguments = @((Join-Path $PSScriptRoot 'prepare-multiplayer.mjs'))
+if ($AdvancedOnly) { $prepareArguments += '--advanced-only' }
+if ($Addon) {
+    $project = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/addon-project.json') -Raw | ConvertFrom-Json
+    $addonMod = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) 'build/upload') $project.modFolder
+    foreach ($module in $project.modules) {
+        if (-not (Test-Path -LiteralPath (Join-Path $addonMod ('addons/' + $project.prefix + '_' + $module.id + '.pbo')))) { throw ('Build missing PBO: ' + $module.id) }
+    }
+    $Mods = @($addonMod) + $Mods
+    $prepareArguments += '--addon'
+}
+& node @prepareArguments
 if ($LASTEXITCODE -ne 0) { throw 'Could not prepare multiplayer mission' }
 $repository = Split-Path -Parent $PSScriptRoot
 $runtime = Join-Path $repository 'build/multiplayer'

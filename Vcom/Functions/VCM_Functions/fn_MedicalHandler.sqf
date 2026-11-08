@@ -1,6 +1,7 @@
 /* Author: Genesis. Vanilla treatment only. ACE Medical owns its own treatment state. */
 params ["_group", "_medics"];
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (!VCM_MEDICALACTIVE || {!([_group] call VCM_fnc_GroupEnabled)}) exitWith {};
 {
     private _patient = _x;

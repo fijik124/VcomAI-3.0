@@ -1,8 +1,9 @@
 /* Veto scripted suppression across nearby allies/civilians or obstructed sight lines. */
 params ["_unit", "_position", ["_enemy", objNull]];
-if (!local _unit || {!alive _unit}) exitWith {false};
+if (!local _unit || {!alive _unit} || {count _position != 3}) exitWith {false};
 private _start = eyePos _unit;
 private _end = ATLToASL (_position vectorAdd [0,0,1]);
+if (!([_start, _end, _unit, _enemy] call VCM_fnc_PhysicalFireLane)) exitWith {false};
 if ([_unit, "VIEW", _enemy] checkVisibility [_start, _end] < 0.2) exitWith {false};
 private _origin = getPosATL _unit;
 private _vector = [(_position select 0) - (_origin select 0), (_position select 1) - (_origin select 1), 0];

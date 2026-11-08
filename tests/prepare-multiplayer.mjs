@@ -1,18 +1,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+import { addonAssertions, addonChecks, sqfLiteral } from '../tools/addon-project.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const folder = path.join(root, 'build/multiplayer/VCM_Multiplayer.VR');
+const addon = process.argv.includes('--addon');
+assert.equal(path.dirname(folder),path.join(root,'build/multiplayer'));
+fs.rmSync(folder,{recursive:true,force:true});
 fs.mkdirSync(folder, { recursive: true });
-fs.cpSync(path.join(root, 'Vcom'), path.join(folder, 'Vcom'), { recursive: true });
+if (!addon) fs.cpSync(path.join(root, 'Vcom'), path.join(folder, 'Vcom'), { recursive: true });
 fs.cpSync(path.join(root, 'tests/multiplayer'), path.join(folder, 'mp'), { recursive: true });
+fs.writeFileSync(path.join(folder,'mp/addon-layout.sqf'),addon ? addonAssertions() : '// Mission-script mode has no addon modules.\n');
 let description = fs.readFileSync(path.join(root, 'description.ext'), 'utf8');
 description = description.replace('#include "vcom\\cfgFunctions.hpp"', '#include "vcom\\cfgFunctions.hpp"\nclass VCOMTest { tag="VCM_test"; class Test { file="mp"; class Report {}; class Probe {}; class Scenario {}; }; };');
+if (addon) description = description.replace('#include "vcom\\cfgFunctions.hpp"','');
 description = description.replace('class VCM_fnc_RequestSettings', 'class VCM_test_fnc_Report { allowedTargets=2; jip=0; };\nclass VCM_test_fnc_Probe { allowedTargets=0; jip=0; };\nclass VCM_test_fnc_Scenario { allowedTargets=0; jip=0; };\nclass VCM_fnc_RequestSettings');
 description += '\nclass Header { gameType="COOP"; minPlayers=1; maxPlayers=3; };\n';
 fs.writeFileSync(path.join(folder, 'description.ext'), description);
-fs.writeFileSync(path.join(folder, 'init.sqf'), '[] execVM "Vcom\\VcomInit.sqf";\nif (isServer) then {[] execVM "mp\\server.sqf"} else {[] execVM "mp\\client.sqf"};\n');
+fs.writeFileSync(path.join(folder, 'init.sqf'), `VCM_MP_AdvancedOnly=${process.argv.includes('--advanced-only')};\nVCM_TestAddonChecks=${sqfLiteral(addon ? addonChecks() : [])};\n` + (addon ? '' : '[] execVM "Vcom\\VcomInit.sqf";\n') + 'if (isServer) then {[] execVM "mp\\server.sqf"} else {[] execVM "mp\\client.sqf"};\n');
 fs.writeFileSync(path.join(folder, 'mission.sqm'), `version=12;
 class Mission {
  addOns[]={"A3_Characters_F_BLUFOR","A3_Map_VR","A3_Modules_F"};

@@ -3,6 +3,15 @@ if (missionNamespace getVariable ["VCM_SettingsInitialized", false]) exitWith {}
 VCM_SettingsInitialized = true;
 [] call compile preprocessFileLineNumbers "Vcom\Functions\VcomAI_DefaultSettings.sqf";
 [] call Vcm_Settings;
+VCM_ThrowMagazineSet = createHashMapFromArray ((compatibleMagazines "Throw") apply {[_x,true]});
+VCM_ThrowInfo = createHashMapFromArray ((compatibleMagazines "Throw") apply {
+    private _ammo = getText (configFile >> "CfgMagazines" >> _x >> "ammo");
+    private _config = configFile >> "CfgAmmo" >> _ammo;
+    private _lethal = getNumber (_config >> "indirectHit") > 0 || {getNumber (_config >> "explosive") > 0};
+    private _smoke = !_lethal && {toLower getText (_config >> "simulation") in ["shotsmoke","shotsmokex"]} &&
+        {toLower getText (_config >> "effectsSmoke") find "smoke" >= 0};
+    [_x,[_ammo,_lethal,_smoke]]
+});
 // Capture the allowed setting names/types before reading any user overrides.
 VCM_SettingSchema = [];
 {
@@ -16,8 +25,13 @@ VCM_SettingSchema = [];
     "VCM_FRMCHANGE", "VCM_SKILLCHANGE", "VCM_USECBASETTINGS", "VCM_CARGOCHNG", "VCM_TURRETUNLOAD",
     "VCM_DISEMBARKRANGE", "VCM_AIDIFA", "VCM_AIDIFWEST", "VCM_AIDIFEAST", "VCM_AIDIFRESISTANCE",
     "VCM_CLASSNAMESPECIFIC", "VCM_SIDESPECIFICSKILL", "VCM_SKILL_CLASSNAMES", "VCM_ARTYAMMOOVERRIDES",
-    "VCM_FIREMOVEMENT", "VCM_BOUNDLENGTH", "VCM_BOUNDSECONDS", "VCM_COVERSEARCH"
+    "VCM_FIREMOVEMENT", "VCM_BOUNDLENGTH", "VCM_BOUNDSECONDS", "VCM_COVERSEARCH",
+    "VCM_WALLCHECK", "VCM_NOGRENADESINDOORS", "VCM_BARRACKSCLASSES", "VCM_CROSSOWNER_SUPPORT",
+    "VCM_TACTICALRETREAT", "VCM_REACTIVESUPPRESSION", "VCM_BUILDINGCLEARING", "VCM_COMBINEDARMS"
 ];
+{
+    if (_x select 7) then {VCM_SettingSchema pushBack [_x select 0,typeName (_x select 3)]};
+} forEach ([] call VCM_fnc_FeatureSettings);
 if (isServer && {isFilePatchingEnabled}) then {
     if (loadFile "\userconfig\VCOM_AI\AISettingsV3.hpp" != "") then {
         [] call compile preprocessFileLineNumbers "\userconfig\VCOM_AI\AISettingsV3.hpp";
@@ -30,7 +44,4 @@ VCM_MEDICALACTIVE = !(isClass (configFile >> "CfgPatches" >> "ace_medical")) &&
     {!(isClass (configFile >> "CfgPatches" >> "ace_medical_engine"))};
 VCM_SettingsReady = isServer;
 VCM_CBAReady = !CBAACT;
-if (CBAACT) then {
-    ["CBA_settingsInitialized", {VCM_CBAReady = true}] call CBA_fnc_addEventHandler;
-    [] call VCM_fnc_CBASettings;
-};
+// Register after CBA's own startup; addon preInit can precede its mission namespace initialization.

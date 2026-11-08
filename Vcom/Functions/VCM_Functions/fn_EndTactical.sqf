@@ -1,0 +1,11 @@
+params ["_group","_key",["_reason","cancelled"]];
+private _state = _group getVariable ["VCM_Task",[]];
+if (_state isEqualTo [] || {!((_state select 0) isEqualTo _key)}) exitWith {};
+[_group,"task-end",format ["%1 %2 phase %3",_state select 1,_reason,_state select 3]] call VCM_fnc_DebugTrace;
+[_group,_key] call VCM_fnc_EvacRelease;
+_group setVariable ["VCM_LastTaskDetail",(_state select 2) apply {[_x,getPosATL _x,currentCommand _x,expectedDestination _x,_x getVariable ["VCM_LastTaskMove",[]]]}];
+{[_x,_key] call VCM_fnc_ReleaseTacticalUnit} forEach (_state select 2);
+_group setVariable ["VCM_LastTask",[_state select 1,_reason,_state select 3,_state select 4],local _group];
+_group setVariable ["VCM_Task",nil];
+if (((_group getVariable ["VCM_AttackControl",[]]) param [0,[]]) isEqualTo _key) then {[_group] call VCM_fnc_AttackControl};
+if (local _group) then {_group setVariable ["VCM_Committed",false,true]};

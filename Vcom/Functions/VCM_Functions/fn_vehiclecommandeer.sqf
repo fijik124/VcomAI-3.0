@@ -17,6 +17,7 @@
 //Pull lists of units in the group - ONLY alive units
 if (!([_this] call VCM_fnc_GroupEnabled)) exitWith {};
 if (_this getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_this getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 private _Allunits = ((units _this) select {alive _x && {local _x} && {!isPlayer _x}});
 private _Leader = leader _this;
 

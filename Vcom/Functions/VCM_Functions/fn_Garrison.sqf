@@ -1,6 +1,7 @@
 /* Author: Genesis. Hold a building without disabling engine pathfinding. */
 private _group = _this;
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 private _run = _group getVariable ["VCM_RunId", []];
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group getVariable ["VCM_GarrisonBusy", false]}) exitWith {};
 private _waypoint = [_group, currentWaypoint _group];

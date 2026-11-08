@@ -3,8 +3,10 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { project, moduleLayout, addonAssertions } from '../tools/addon-project.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+moduleLayout();
 const stage = path.join(root, 'build', 'validation');
 // This script only ever removes its own generated staging directory.
 assert.equal(path.dirname(stage), path.join(root, 'build'));
@@ -19,11 +21,20 @@ fs.cpSync(path.join(root, 'Vcom'), path.join(addon, 'Vcom'), {
 fs.copyFileSync(path.join(root, 'description.ext'), path.join(addon, 'mission.hpp'));
 fs.copyFileSync(path.join(root, 'init.sqf'), path.join(addon, 'init.sqf'));
 fs.copyFileSync(path.join(root, 'tests/regression.sqf'), path.join(addon, 'regression.sqf'));
+fs.writeFileSync(path.join(addon,'addon-layout.sqf'),addonAssertions());
 fs.copyFileSync(path.join(root, 'tests/fire-movement.sqf'), path.join(addon, 'fire-movement.sqf'));
 fs.copyFileSync(path.join(root, 'tests/cover.sqf'), path.join(addon, 'cover.sqf'));
+fs.copyFileSync(path.join(root, 'tests/safety.sqf'), path.join(addon, 'safety.sqf'));
+fs.copyFileSync(path.join(root, 'tests/tactics.sqf'), path.join(addon, 'tactics.sqf'));
+fs.copyFileSync(path.join(root, 'tests/vehicle.sqf'), path.join(addon, 'vehicle.sqf'));
+fs.copyFileSync(path.join(root, 'tests/performance.sqf'), path.join(addon, 'performance.sqf'));
+fs.copyFileSync(path.join(root, 'tests/advanced.sqf'), path.join(addon, 'advanced.sqf'));
+fs.copyFileSync(path.join(root, 'tests/coordination.sqf'), path.join(addon, 'coordination.sqf'));
+fs.copyFileSync(path.join(root, 'tests/evacuation.sqf'), path.join(addon, 'evacuation.sqf'));
 fs.cpSync(path.join(root, 'tests/multiplayer'), path.join(addon, 'mp'), { recursive: true });
 fs.copyFileSync(path.join(root, 'userconfig/VCOM_AI/AISettingsV3.hpp'), path.join(addon, 'userconfig.sqf'));
-fs.writeFileSync(path.join(stage, '.hemtt/project.toml'), 'name = "VCOM validation"\nprefix = "vcm"\nmainprefix = "z"\n[version]\nmajor = 3\nminor = 4\npatch = 0\ngit_hash = 0\n');
+const [versionMajor,versionMinor,versionPatch] = project.version.split('.');
+fs.writeFileSync(path.join(stage, '.hemtt/project.toml'), `name = "${project.name} validation"\nprefix = "vcm"\nmainprefix = "z"\n[version]\nmajor = ${versionMajor}\nminor = ${versionMinor}\npatch = ${versionPatch}\ngit_hash = 0\n`);
 fs.writeFileSync(path.join(addon, '$PBOPREFIX$'), 'z\\vcm\\addons\\vcom');
 fs.writeFileSync(path.join(addon, 'config.cpp'), 'class CfgPatches { class VCM_validation { units[] = {}; weapons[] = {}; requiredVersion = 2.22; requiredAddons[] = {"A3_Functions_F"}; }; };\n#include "mission.hpp"\n');
 

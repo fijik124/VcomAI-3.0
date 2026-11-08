@@ -16,6 +16,7 @@ private ["_unit", "_nearestCity", "_locationPos", "_nearestVillage", "_locationP
 //Pull the unit
 _unit = _this;
 if ((group _unit) getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {false};
+if ((group _unit) getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {false};
 if (!([group _unit] call VCM_fnc_GroupEnabled)) exitWith {false};
 
 //Grab the group of the unit

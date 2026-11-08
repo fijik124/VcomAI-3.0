@@ -10,6 +10,7 @@ private _assert = {
     diag_log format ["VCM_MP_%1: %2", ["FAIL", "PASS"] select _condition, _name];
 };
 private _finish = {diag_log format ["VCM_MP_DONE: %1 checks, %2 failures", VCM_MP_Count, VCM_MP_Failures]};
+[] call compile preprocessFileLineNumbers "mp\addon-layout.sqf";
 private _await = {
     params ["_condition", ["_seconds", 15]];
     private _deadline = diag_tickTime + _seconds;
@@ -65,6 +66,10 @@ private _first = (call _owners) select 0;
 private _joined = VCM_MP_Reports get format ["%1:joined", _first];
 [_joined select 0, "first headless client reports didJIP"] call _assert;
 [_joined select 1, "first headless client initializes VCOM settings"] call _assert;
+if (VCM_TestAddonChecks isNotEqualTo []) then {
+    [count (_joined param [4,[]]) == count VCM_TestAddonChecks && {(_joined select 4) findIf {!_x} < 0},
+        "first HC loads every addon module and its functions"] call _assert;
+};
 [(_joined select 2) isEqualTo _initialSettings, "JIP receives server side and skill arrays"] call _assert;
 private _forgedKey = format ["%1:forged", _first];
 [{!isNil {VCM_MP_Reports get _forgedKey}}, 10] call _await;
@@ -87,8 +92,19 @@ if (!_connected) exitWith {call _finish};
 private _second = (call _owners) select 1;
 _joined = VCM_MP_Reports get format ["%1:joined", _second];
 [_joined select 0, "second headless client reports didJIP"] call _assert;
+if (VCM_TestAddonChecks isNotEqualTo []) then {
+    [count (_joined param [4,[]]) == count VCM_TestAddonChecks && {(_joined select 4) findIf {!_x} < 0},
+        "second HC loads every addon module and its functions"] call _assert;
+};
 [(_joined select 2) isEqualTo _updatedSettings, "later join receives current settings rather than defaults"] call _assert;
 
+if (missionNamespace getVariable ["VCM_MP_AdvancedOnly",false]) exitWith {
+    private _opfor = createGroup [east,true];
+    _opfor setVariable ["Vcm_Disable",true,true];
+    [] call compile preprocessFileLineNumbers "mp\advanced.sqf";
+    deleteGroup _opfor;
+    call _finish;
+};
 private _group = createGroup [west, true];
 _group setVariable ["VCM_Skilldisable", true, true];
 private _unit = _group createUnit ["B_Soldier_F", [1000,1000,0], [], 0, "NONE"];
@@ -190,6 +206,129 @@ _new = (_clientState param [3, []]) param [0, []];
 private _oldKeysGone = count _new > 0 && {(_new select 5) findIf {(_x select 2) isEqualTo _oldBoundKey} < 0};
 [_oldKeysGone, "new owner releases inherited maneuver reservations"] call _assert;
 
+// A request from HC2 must be able to reach infantry and artillery owned by HC1.
+VCM_CROSSOWNER_SUPPORT = true;
+VCM_ARTYENABLE = true;
+VCM_ARTYDELAY = 10;
+VCM_WARNDIST = 400;
+VCM_REACTIVESUPPRESSION = false;
+VCM_COMBINEDARMS = false;
+VCM_BUILDINGCLEARING = false;
+VCM_FIREMOVEMENT = false;
+sleep 2;
+private _caller = createGroup [west,true];
+_caller setVariable ["VCM_Skilldisable",true,true];
+_caller setVariable ["VCM_NOAUTOTACTICS",true,true];
+private _callerUnit = _caller createUnit ["B_Soldier_F",[11000,11000,0],[],0,"NONE"];
+_callerUnit allowDamage false;
+private _responder = createGroup [west,true];
+_responder setVariable ["VCM_Skilldisable",true,true];
+_responder setVariable ["VCM_NOAUTOTACTICS",true,true];
+private _responderUnit = _responder createUnit ["B_Soldier_F",[11050,11000,0],[],0,"NONE"];
+_responderUnit allowDamage false;
+private _supportTarget = _opfor createUnit ["O_Soldier_F",[11400,11000,0],[],0,"NONE"];
+_supportTarget disableAI "ALL";
+_supportTarget allowDamage false;
+_caller call VCM_fnc_SquadExc;
+_responder call VCM_fnc_SquadExc;
+[_caller,_second,"support caller to HC2"] call _transfer;
+[_responder,_first,"support responder to HC1"] call _transfer;
+["requestSupport",_caller,"forged-support",[_supportTarget,[11400,11000,0],"reinforcement",_responder]] remoteExecCall ["VCM_test_fnc_Scenario",_second];
+sleep 1;
+[_responder getVariable ["VCM_LastSupport",[]] isEqualTo [], "support relay rejects an HC claiming another owner's group"] call _assert;
+["requestSupport",_caller,"support",[_supportTarget,[11400,11000,0],"reinforcement"]] remoteExecCall ["VCM_test_fnc_Scenario",_second];
+private _received = [{_responder getVariable ["VCM_LastSupport",[]] isNotEqualTo []},10] call _await;
+[_received, "HC2 reinforcement request reaches an HC1 responder"] call _assert;
+[_received && {(_responder getVariable ["VCM_LastSupport",[]]) select 2 == _first}, "reinforcement order executes on the responder's owner"] call _assert;
+// No fire mission may start while the fixture's vehicle is still changing owner.
+VCM_ARTYENABLE = false;
+sleep 2;
+private _mortar = createVehicle ["B_Mortar_01_F",[10600,11000,0],[],0,"CAN_COLLIDE"];
+// Transfer a registered foot crew before seating it; native setGroupOwner can eject seated leaders.
+private _mortarGroup = createGroup [west,true];
+_mortarGroup setVariable ["Vcm_Disable",true,true];
+private _mortarGunner = _mortarGroup createUnit ["B_Soldier_F",[10600,11000,0],[],0,"NONE"];
+_mortarGunner allowDamage false;
+_mortar allowDamage false;
+_mortarGroup setVariable ["VCM_Skilldisable",true,true];
+_mortarGroup setVariable ["VCM_NOAUTOTACTICS",true,true];
+sleep 0.5;
+[_mortarGroup,_first,"artillery crew to HC1"] call _transfer;
+["mountArtillery",_mortarGroup,"mount",[_mortar]] remoteExecCall ["VCM_test_fnc_Scenario",_first];
+private _gunOwned = [{owner _mortar == _first && {gunner _mortar == _mortarGunner}},10] call _await;
+[_gunOwned,"HC-owned artillery crew takes native control of its mortar"] call _assert;
+["artilleryCounter",_mortarGroup,"counter"] remoteExecCall ["VCM_test_fnc_Scenario",_first];
+sleep 0.5;
+diag_log format ["VCM_MP_ARTY_READY: owner=%1 crewOwner=%2 mission=%3",owner _mortar,groupOwner _mortarGroup,_mortar getVariable ["VCM_LastFireMission",[]]];
+VCM_ARTYENABLE = true;
+sleep 2;
+["requestSupport",_caller,"artillery",[_supportTarget,[11400,11000,0],"artillery"]] remoteExecCall ["VCM_test_fnc_Scenario",_second];
+private _fireMission = [{_mortar getVariable ["VCM_LastFireMission",[]] isNotEqualTo []},10] call _await;
+[_fireMission, "HC2 artillery request reaches an HC1-owned mortar"] call _assert;
+diag_log format ["VCM_MP_ARTY_RESULT: owner=%1 crewOwner=%2 mission=%3",owner _mortar,groupOwner _mortarGroup,_mortar getVariable ["VCM_LastFireMission",[]]];
+[_fireMission && {(_mortar getVariable ["VCM_LastFireMission",[]]) select 3 == _first}, "HE fire mission executes on the gun's current owner"] call _assert;
+private _fired = [{_mortar getVariable ["VCM_TestArtyShots",0] > 0},25] call _await;
+[_fired, "remote mortar fires a real native artillery projectile"] call _assert;
+
+// Stored grenades remain conserved when a real indoor unit changes owner.
+private _inventoryGroup = createGroup [west,true];
+_inventoryGroup setVariable ["VCM_Skilldisable",true,true];
+_inventoryGroup setVariable ["VCM_NOAUTOTACTICS",true,true];
+private _inventoryUnit = _inventoryGroup createUnit ["B_Soldier_F",[12000,12000,0],[],0,"NONE"];
+_inventoryUnit allowDamage false;
+private _barracks = createVehicle ["Land_i_Barracks_V1_F",[12000,12000,0],[],0,"CAN_COLLIDE"];
+sleep 0.2;
+private _inside = [];
+{_inventoryUnit setPosATL _x; if ([_inventoryUnit] call VCM_fnc_InsideBarracks) exitWith {_inside = _x}} forEach (_barracks buildingPos -1);
+[_inside isNotEqualTo [], "multiplayer barracks has a confirmed indoor position"] call _assert;
+{_inventoryUnit removeMagazines _x} forEach compatibleMagazines "Throw";
+_inventoryUnit addMagazine "HandGrenade";
+_inventoryUnit addMagazine "HandGrenade";
+_inventoryGroup call VCM_fnc_SquadExc;
+private _stored = [{count (_inventoryUnit getVariable ["VCM_StoredGrenades",[]]) == 2},5] call _await;
+[_stored, "server stores the indoor unit's two grenades"] call _assert;
+[_inventoryGroup,_first,"indoor inventory to HC1"] call _transfer;
+private _inventoryProbe = [_first,"inventory-indoor",[_inventoryGroup]] call _probe;
+private _inventoryState = (_inventoryProbe param [3,[]]) param [0,[]];
+private _unitState = (_inventoryState param [5,[]]) param [0,[]];
+[count _unitState > 0 && {count (_unitState select 6) == 2} && {!("HandGrenade" in (_unitState select 7))},
+    "HC handoff conserves stored grenades and keeps them unavailable indoors"] call _assert;
+["leaveBarracks",_inventoryGroup,"outside",[12100,12000,0]] remoteExecCall ["VCM_test_fnc_Scenario",_first];
+sleep 1;
+_inventoryProbe = [_first,"inventory-outdoor",[_inventoryGroup]] call _probe;
+_inventoryState = (_inventoryProbe param [3,[]]) param [0,[]];
+_unitState = (_inventoryState param [5,[]]) param [0,[]];
+[count _unitState > 0 && {(_unitState select 6) isEqualTo []} && {{_x == "HandGrenade"} count (_unitState select 7) == 2},
+    "HC restores exactly two grenades after the unit leaves the barracks"] call _assert;
+
+private _retreatGroup = createGroup [west,true];
+_retreatGroup setVariable ["VCM_Skilldisable",true,true];
+_retreatGroup setVariable ["VCM_NOAUTOTACTICS",true,true];
+private _retreatUnits = [];
+for "_i" from 0 to 3 do {
+    private _soldier = _retreatGroup createUnit ["B_Soldier_F",[13000,13000 + _i * 6,0],[],0,"NONE"];
+    _soldier allowDamage false;
+    _retreatUnits pushBack _soldier;
+};
+private _retreatTarget = _opfor createUnit ["O_Soldier_F",[13200,13000,0],[],0,"NONE"];
+_retreatTarget disableAI "ALL";
+_retreatTarget allowDamage false;
+_retreatGroup call VCM_fnc_SquadExc;
+sleep 0.5;
+_retreatGroup reveal [_retreatTarget,4];
+[_retreatGroup,[_retreatTarget,[13200,13000,0],"handoff"]] spawn VCM_fnc_Retreat;
+sleep 0.5;
+private _retreatState = _retreatGroup getVariable ["VCM_Task",[]];
+[_retreatState isNotEqualTo [], "withdrawal is active before locality transfer"] call _assert;
+private _oldTaskKey = _retreatState param [0,[]];
+[_retreatGroup,_first,"active withdrawal to HC1"] call _transfer;
+private _retreatProbe = [_first,"retreat-handoff",[_retreatGroup]] call _probe;
+private _newRetreat = (_retreatProbe param [3,[]]) param [0,[]];
+[count _newRetreat > 0 && {_newRetreat select 2 == 1}, "transferred withdrawal receives exactly one HC controller"] call _assert;
+[count _newRetreat > 0 && {(_newRetreat select 5) findIf {(_x select 9) isEqualTo _oldTaskKey} < 0},
+    "new owner releases inherited withdrawal reservations"] call _assert;
+
+[] call compile preprocessFileLineNumbers "mp\advanced.sqf";
 diag_log "VCM_MP_DISCONNECT_READY";
 private _recovered = [{groupOwner _group == 2}, 35] call _await;
 [_recovered, "disconnect returns group ownership to server"] call _assert;
@@ -201,6 +340,10 @@ _serverState = [2, "bound-recovery", [_boundGroup]] call _probe;
 _new = (_serverState param [3, []]) param [0, []];
 [groupOwner _boundGroup == 2 && {count _new > 0} && {_new select 2 == 1}, "coordinated squad also recovers after disconnect"] call _assert;
 [(waypoints _group) findIf {waypointName _x == "MP_AUTHORED_HOLD"} >= 0, "authored route survives disconnect recovery"] call _assert;
+_serverState = [2,"retreat-recovery",[_retreatGroup]] call _probe;
+_newRetreat = (_serverState param [3,[]]) param [0,[]];
+[groupOwner _retreatGroup == 2 && {count _newRetreat > 0} && {_newRetreat select 2 == 1}, "withdrawal squad controller recovers after HC disconnect"] call _assert;
+{_x setVariable ["Vcm_Disable",true,true]} forEach [_caller,_responder,_mortarGroup,_inventoryGroup,_retreatGroup];
 _group setVariable ["Vcm_Disable", true, true];
 _boundGroup setVariable ["Vcm_Disable", true, true];
 sleep 0.5;
@@ -209,6 +352,8 @@ deleteVehicle _target;
 deleteVehicle _building;
 {deleteVehicle _x} forEach _boundSoldiers;
 deleteVehicle _boundTarget;
+{deleteVehicle _x} forEach ([_callerUnit,_responderUnit,_supportTarget,_inventoryUnit,_barracks,_retreatTarget] + _retreatUnits + crew _mortar + [_mortar]);
+{deleteGroup _x} forEach [_caller,_responder,_mortarGroup,_inventoryGroup,_retreatGroup];
 deleteGroup _boundGroup;
 deleteGroup _group;
 deleteGroup _opfor;

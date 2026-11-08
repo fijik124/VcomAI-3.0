@@ -1,5 +1,7 @@
 params ["_group", "_transport", "_vehicles"];
+if (_group getVariable ["VCM_ArmorPartner",[]] isNotEqualTo []) exitWith {};
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group getVariable ["VCM_NOFLANK", false]}) exitWith {};
 if (!_transport) exitWith {[leader _group] spawn VCM_fnc_FlankMove};
 private _leader = leader _group;

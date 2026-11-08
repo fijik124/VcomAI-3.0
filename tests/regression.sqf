@@ -11,6 +11,7 @@ private _assert = {
     diag_log format ["VCM_TEST_%1: %2", ["FAIL", "PASS"] select _condition, _name];
 };
 Vcm_ActivateAI = false;
+[] call compile preprocessFileLineNumbers "addon-layout.sqf";
 sleep 0.5;
 private _group = createGroup [west, true];
 private _unit = _group createUnit ["B_Soldier_F", [1000,1000,0], [], 0, "NONE"];
@@ -165,7 +166,10 @@ sleep 20;
 [_group in VcmAI_ActiveList, "combat controller remains active"] call _assert;
 
 [] call compile preprocessFileLineNumbers "cover.sqf";
+[] call compile preprocessFileLineNumbers "safety.sqf";
 [] call compile preprocessFileLineNumbers "fire-movement.sqf";
+[] call compile preprocessFileLineNumbers "tactics.sqf";
+[] call compile preprocessFileLineNumbers "vehicle.sqf";
 
 Vcm_ActivateAI = false;
 sleep 0.5;

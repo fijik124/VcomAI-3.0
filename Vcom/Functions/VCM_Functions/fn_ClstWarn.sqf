@@ -16,6 +16,10 @@ if (_position isEqualTo []) exitWith {};
 _group setVariable ["VCM_HelpAfter", time + 300];
 sleep VCM_WARNDELAY;
 if (!([_group] call VCM_fnc_GroupEnabled) || {!(_run isEqualTo (_group getVariable ["VCM_RunId", []]))}) exitWith {};
+if (VCM_CROSSOWNER_SUPPORT) exitWith {
+    private _request = [_group,_enemy,_position,"reinforcement",player];
+    if (isServer) then {_request call VCM_fnc_SupportRequest} else {_request remoteExecCall ["VCM_fnc_SupportRequest",2]};
+};
 private _responders = 0;
 {
     private _support = _x;

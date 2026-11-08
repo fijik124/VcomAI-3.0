@@ -2,6 +2,7 @@
 params ["_unit", "_satchelArray"];
 private _group = group _unit;
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 private _run = _group getVariable ["VCM_RunId", []];
 if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {count _satchelArray < 2}) exitWith {};
 _satchelArray params ["_ammo", "_magazine"];

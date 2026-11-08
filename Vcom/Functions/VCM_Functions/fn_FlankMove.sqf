@@ -2,6 +2,7 @@
 params ["_leader"];
 private _group = group _leader;
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group getVariable ["VCM_NOFLANK", false]}) exitWith {};
 private _names = _group getVariable ["VCM_WaypointNames", []];
 private _missionOrders = (waypoints _group) select {(_x select 1) > 0 && {!(waypointName _x in _names)}};

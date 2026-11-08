@@ -2,6 +2,7 @@
 params ["_unit", "_mineArray"];
 private _group = group _unit;
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 private _run = _group getVariable ["VCM_RunId", []];
 if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {count _mineArray < 2} || {random 100 >= VCM_MINECHANCE}) exitWith {};
 _mineArray params ["_mineType", "_magazine"];

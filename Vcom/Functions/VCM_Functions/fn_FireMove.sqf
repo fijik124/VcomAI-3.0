@@ -10,6 +10,8 @@ private _units = _teamA + _teamB;
 private _state = [_key, _units, 0, [], [], [], [0,0]];
 _group setVariable ["VCM_BoundSerial", _serial];
 _group setVariable ["VCM_BoundState", _state];
+_group setVariable ["VCM_Committed",true,true];
+[_group,_key] call VCM_fnc_AttackControl;
 _group setVariable ["VCM_NextBound", diag_tickTime + 45];
 {_x setVariable ["VCM_BoundKey", _key, true]} forEach _units;
 [_group] call VCM_fnc_ClearWaypoints;
@@ -36,7 +38,7 @@ for "_phase" from 0 to 1 do {
     if (_destinations findIf {_x isEqualTo []} >= 0) exitWith {_reason = "noRoute"};
     // Geometry searches can span scheduler slices; recheck orders and locality before issuing movement.
     if (!call _valid) exitWith {_reason = "cancelled"};
-    {doStop _x} forEach _support;
+    {[_x] call VCM_fnc_MovementControl; doStop _x} forEach _support;
     private _pulses = [_support, _group, _run, _position, _enemy] call VCM_fnc_BoundSupport;
     if (_pulses == 0) exitWith {_reason = "noSupport"};
     (_state select 6) set [0, (_state select 6 select 0) + _pulses];
@@ -45,17 +47,43 @@ for "_phase" from 0 to 1 do {
     _state set [4, _movers];
     _state set [5, _destinations];
     {
+        [_x,_key] call VCM_fnc_MovementControl;
         _x suppressFor 0;
         _x doWatch objNull;
-        doStop _x;
-        _x doMove (_destinations select _forEachIndex);
     } forEach _movers;
-    private _deadline = diag_tickTime + ((VCM_BOUNDSECONDS max 5) min 15);
+    sleep 0.1;
+    if (!call _valid) exitWith {_reason = "cancelled"};
+    {[_x,_destinations select _forEachIndex,_run,_key] call VCM_fnc_IssueMove} forEach _movers;
+    private _progress = _movers apply {[getPosATL _x,diag_tickTime,0,[]]};
+    private _deadline = diag_tickTime + ((VCM_BOUNDSECONDS max 5) min 60);
     private _nextPulse = diag_tickTime + 1;
+    private _nextMove = diag_tickTime + 2;
     private _arrived = false;
     waitUntil {
         sleep 0.25;
         if (!call _valid) then {_reason = "cancelled"} else {
+            if (diag_tickTime >= _nextMove) then {
+                // Native combat can interrupt doMove to engage; keep the moving team's bounded intent current.
+                {
+                    private _destination = _destinations select _forEachIndex;
+                    private _sample = _progress select _forEachIndex;
+                    if (diag_tickTime - (_sample select 1) >= VCM_UNSTUCKSECONDS) then {
+                        if (_x distance (_sample select 0) < 0.75 && {_x distance _destination > 3} && {VCM_UNSTUCK}) then {
+                            private _attempt = 1 + (_sample select 2);
+                            _sample set [2,_attempt];
+                            if (_attempt > floor VCM_UNSTUCKTRIES) then {_reason = "stuck"} else {
+                                _sample set [3,[_x,_destination,_run,_key,_attempt] call VCM_fnc_RecoveryPosition];
+                            };
+                        };
+                        _sample set [0,getPosATL _x];
+                        _sample set [1,diag_tickTime];
+                    };
+                    private _leg = _sample select 3;
+                    if (_leg isNotEqualTo [] && {_x distance _leg < 2}) then {_sample set [3,[]]; _leg = []};
+                    if (_x distance _destination > 3) then {[_x,if (_leg isEqualTo []) then {_destination} else {_leg},_run,_key] call VCM_fnc_IssueMove};
+                } forEach _movers;
+                _nextMove = diag_tickTime + 2;
+            };
             if (diag_tickTime >= _nextPulse) then {
                 _pulses = [_support, _group, _run, _position, _enemy] call VCM_fnc_BoundSupport;
                 (_state select 6) set [0, (_state select 6 select 0) + _pulses];

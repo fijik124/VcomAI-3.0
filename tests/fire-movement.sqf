@@ -3,9 +3,10 @@ private _savedSettings = [VCM_FIREMOVEMENT, VCM_ADVANCEDMOVEMENT, VCM_BOUNDLENGT
 VCM_FIREMOVEMENT = false;
 VCM_ADVANCEDMOVEMENT = true;
 VCM_BOUNDLENGTH = 10;
-VCM_BOUNDSECONDS = 12;
+VCM_BOUNDSECONDS = 15;
 private _squad = createGroup [west, true];
 _squad setVariable ["VCM_Skilldisable", true];
+_squad setVariable ["VCM_NOAUTOTACTICS", true];
 private _positions = [[6000,5985,0], [6000,6015,0], [5995,5980,0], [5995,6020,0]];
 private _soldiers = [];
 {
@@ -25,10 +26,12 @@ _squad setCombatMode "YELLOW";
 _squad setBehaviour "COMBAT";
 _squad call VCM_fnc_SquadExc;
 sleep 0.5;
-VCM_FIREMOVEMENT = true;
 _squad reveal [_target, 4];
 private _leader = leader _squad;
 private _gunner = _soldiers select 3;
+private _contactDeadline = diag_tickTime + 5;
+waitUntil {sleep 0.05; ([_leader,_target] call VCM_fnc_ContactPosition) isNotEqualTo [] || {diag_tickTime > _contactDeadline}};
+VCM_FIREMOVEMENT = true;
 private _plan = [_leader] call VCM_fnc_FireMovePlan;
 [_plan isNotEqualTo [], "four eligible infantry receive a fire-and-movement plan"] call _assert;
 if (_plan isNotEqualTo []) then {
@@ -100,6 +103,7 @@ waitUntil {
 };
 private _result = _squad getVariable ["VCM_LastBound", ["", [0,0]]];
 diag_log format ["VCM_BOUND_RESULT: %1; shots=%2", _result, VCM_TestBoundShots];
+if (_result select 0 != "completed") then {diag_log format ["VCM_BOUND_DETAIL: %1",_squad getVariable ["VCM_LastBoundDetail",[]]]};
 [scriptDone _job, "maneuver finishes within its deadline"] call _assert;
 [_swapped, "teams exchange support and movement roles"] call _assert;
 [(_result select 0) == "completed" && {_result select 1 select 1 == 2}, "both advances complete"] call _assert;
@@ -118,6 +122,9 @@ private _reset = {
         _x setAmmo [primaryWeapon _x, 200];
         _x setSuppression 0;
     } forEach _soldiers;
+    _squad setBehaviour "COMBAT";
+    // Let the native navigation and formation state catch up with the reset positions.
+    sleep 0.25;
     _squad reveal [_target, 4];
     _squad setVariable ["VCM_NextBound", -1];
     VCM_FIREMOVEMENT = true;

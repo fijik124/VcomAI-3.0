@@ -5,4 +5,4 @@ if (_run isEqualTo []) then {_run = _group getVariable ["VCM_RunId", []]};
 if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {isNull _source}) exitWith {};
 private _arrived = [_unit, getPosATL _source, 40, {!isNull _source}] call VCM_fnc_MoveTo;
 if (_arrived && {!isNull _source} && {_unit distance _source < 6}) then {_unit action ["Rearm", _source]};
-if ([_unit, _group, _run] call VCM_fnc_ActionValid && {_unit != leader _group}) then {_unit doFollow leader _group};
+if ([_unit, _group, _run] call VCM_fnc_CanFollow) then {_unit doFollow leader _group};

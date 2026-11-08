@@ -1,11 +1,27 @@
 param(
     [string]$ArmaDirectory = "${env:ProgramFiles(x86)}/Steam/steamapps/common/Arma 3",
-    [int]$TimeoutSeconds = 180,
-    [string[]]$Mods = @()
+    [int]$TimeoutSeconds = 300,
+    [string[]]$Mods = @(),
+    [ValidateSet('all','safety','tactics','vehicle','performance','advanced')][string]$Suite = 'all',
+    [switch]$Addon,
+    [ValidateRange(30,1800)][int]$PerformanceSeconds = 60,
+    [switch]$Vanilla
 )
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path -Parent $PSScriptRoot
-& node (Join-Path $PSScriptRoot 'prepare-runtime.mjs')
+$prepareArguments = @((Join-Path $PSScriptRoot 'prepare-runtime.mjs'),$Suite)
+if ($Suite -eq 'performance') { $prepareArguments += ('--duration=' + $PerformanceSeconds); $TimeoutSeconds = [Math]::Max($TimeoutSeconds,$PerformanceSeconds + 60) }
+if ($Vanilla) { $prepareArguments += '--vanilla' }
+if ($Addon) {
+    $project = Get-Content -LiteralPath (Join-Path $repository 'tools/addon-project.json') -Raw | ConvertFrom-Json
+    $addonMod = Join-Path (Join-Path $repository 'build/upload') $project.modFolder
+    foreach ($module in $project.modules) {
+        if (-not (Test-Path -LiteralPath (Join-Path $addonMod ('addons/' + $project.prefix + '_' + $module.id + '.pbo')))) { throw ('Build missing PBO: ' + $module.id) }
+    }
+    $Mods = @($addonMod) + $Mods
+    $prepareArguments += '--addon'
+}
+& node @prepareArguments
 if ($LASTEXITCODE -ne 0) { throw 'Could not prepare regression mission' }
 $runtime = Join-Path $repository 'build/runtime'
 $profiles = Join-Path $runtime ('profiles-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -42,14 +58,17 @@ try {
             $text = Get-Content -LiteralPath $rpt.FullName -Raw
             if ($text -match 'VCM_TEST_DONE:') { break }
             if ($text -match "Can't find mission template:") { break }
+            if ($text -match 'Warning Message: Script .* not found|Error in expression|Undefined variable') { break }
         }
         Start-Sleep -Milliseconds 500
     }
     if ($rpt) {
+        $text = Get-Content -LiteralPath $rpt.FullName -Raw
         Write-Output "RPT: $($rpt.FullName)"
-        Get-Content -LiteralPath $rpt.FullName | Select-String 'VCM_TEST_ENV:|VCM_TEST_FAIL:|VCM_TEST_DONE:|VCM_BOUND_RESULT:|VCM_COVER_RESULT:|Error in expression|Error position|Undefined variable|Error Missing|Warning Message:' | ForEach-Object { $_.Line }
+        Get-Content -LiteralPath $rpt.FullName | Select-String 'VCM_TEST_ENV:|VCM_TEST_FAIL:|VCM_TEST_DONE:|VCM_BOUND_RESULT:|VCM_COVER_RESULT:|VCM_TACTICAL_RESULT:|VCM_PERF_RESULT:|Error in expression|Error position|Undefined variable|Error Missing|Warning Message:' | ForEach-Object { $_.Line }
     }
     if ($text -notmatch 'VCM_TEST_DONE:') { throw 'Regression mission did not finish before the deadline; inspect the RPT.' }
+    if ($serverProcess.HasExited -and $serverProcess.ExitCode -ne 0) { throw "Arma server exited unexpectedly with code $($serverProcess.ExitCode)." }
     if ($text -match 'VCM_TEST_FAIL:|Error in expression|Undefined variable|Error Missing') { throw 'Runtime regression failed; inspect the RPT.' }
     Write-Output 'Runtime regression passed.'
 } finally {

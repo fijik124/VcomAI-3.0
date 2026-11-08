@@ -2,6 +2,7 @@
 params ["_unit", "_backpack", "_run"];
 private _group = group _unit;
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {!isNull objectParent _unit} ||
     {backpack _unit != _backpack} || {_unit getVariable ["VCM_DeployBusy", false]}) exitWith {};
 private _assembled = getText (configFile >> "CfgVehicles" >> _backpack >> "assembleInfo" >> "assembleTo");

@@ -12,6 +12,14 @@ class CfgRemoteExec
 		mode = 1;
 		jip = 0;
 		class VCM_fnc_RequestSettings { allowedTargets = 2; jip = 0; };
+		class VCM_fnc_SupportRequest { allowedTargets = 2; jip = 0; };
+		class VCM_fnc_CoordRequest { allowedTargets = 2; jip = 0; };
+		class VCM_fnc_TeamAssign { allowedTargets = 1; jip = 0; };
+		class VCM_fnc_ATAssign { allowedTargets = 1; jip = 0; };
+		class VCM_fnc_VehicleAssist { allowedTargets = 1; jip = 0; };
+		class VCM_fnc_InfantryAssist { allowedTargets = 1; jip = 0; };
+		class VCM_fnc_SupportAssign { allowedTargets = 1; jip = 0; };
+		class VCM_fnc_ArtilleryFire { allowedTargets = 1; jip = 0; };
 		class VCM_fnc_ApplySettings { allowedTargets = 1; jip = 1; };
 		class VCM_fnc_HearingRelay { allowedTargets = 2; jip = 0; };
 		class VCM_fnc_KnowAbout { allowedTargets = 0; jip = 0; };

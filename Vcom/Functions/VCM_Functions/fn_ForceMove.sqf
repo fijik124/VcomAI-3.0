@@ -1,7 +1,9 @@
 /* Author: Genesis. Movement never replaces mission waypoints or disables AI targeting. */
 params ["_leader", ["_distance", 100]];
 private _group = group _leader;
+if (!VCM_ADVANCEDMOVEMENT) exitWith {};
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (VCM_FIREMOVEMENT) exitWith {[_leader] spawn VCM_fnc_FireMove};
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group getVariable ["VCM_NOFLANK", false]}) exitWith {};
 private _names = _group getVariable ["VCM_WaypointNames", []];
@@ -19,7 +21,7 @@ private _run = _group getVariable ["VCM_RunId", []];
             private _group = group _unit;
             if (!([_unit, _group, _run] call VCM_fnc_ActionValid)) exitWith {};
             [_unit, _position, 30] call VCM_fnc_MoveTo;
-            if ([_unit, _group, _run] call VCM_fnc_ActionValid && {_unit != leader _group}) then {_unit doFollow leader _group};
+            if ([_unit, _group, _run] call VCM_fnc_CanFollow) then {_unit doFollow leader _group};
         };
     };
 } forEach units _group;

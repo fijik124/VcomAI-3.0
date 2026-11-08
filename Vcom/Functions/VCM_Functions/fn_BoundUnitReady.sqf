@@ -7,3 +7,5 @@ params ["_unit", "_group", "_run"];
 {!(_unit getVariable ["VCM_MBUSY", false])} && {!(_unit getVariable ["VCM_PatientBusy", false])} &&
 {!(_unit getVariable ["VCM_DeployBusy", false])}
 && {_unit getVariable ["VCM_MoveKey", []] isEqualTo []}
+&& {_unit getVariable ["VCM_TaskKey", []] isEqualTo []}
+&& {((_unit getVariable ["VCM_Handlers",[[],[]]]) select 0) isEqualTo _run}

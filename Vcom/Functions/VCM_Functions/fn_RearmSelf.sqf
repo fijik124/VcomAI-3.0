@@ -14,6 +14,7 @@
 
 if (!([_this] call VCM_fnc_GroupEnabled)) exitWith {};
 if (_this getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
+if (_this getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 private _run = _this getVariable ["VCM_RunId", []];
 private _magLimit = VCM_AIMagLimit;
 {
