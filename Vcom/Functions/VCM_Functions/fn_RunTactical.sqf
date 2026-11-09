@@ -13,6 +13,16 @@ _group setVariable ["VCM_TaskSerial",_serial];
 _group setVariable ["VCM_Task",_state];
 _group setVariable ["VCM_Committed",true,true];
 [_group,"task-start",_kind] call VCM_fnc_DebugTrace;
+private _why = switch (_kind) do {
+    case "clear": {"Remembered hostile contact is inside a building"};
+    case "retreat": {"Casualty or suppression threshold requires withdrawal"};
+    case "evac": {"A reachable casualty needs recovery toward cover"};
+    case "escort": {"Friendly infantry and vehicle can cooperate"};
+    case "cooperate": {"Server coordinator assigned this squad a combat role"};
+    case "antitank": {"Reserved an armored contact for an eligible launcher"};
+    default {"Available support soldiers cover pressured teammates"};
+};
+[_group,_kind,_why,(_phases select 0 select 2) param [0,[]],_contact] call VCM_fnc_DebugDecision;
 [_group,_key] call VCM_fnc_AttackControl;
 {_x setVariable ["VCM_TaskKey",_key,true]} forEach _units;
 if (_kind in ["retreat","evac"] && {VCM_SMOKECOVER}) then {
@@ -27,8 +37,9 @@ private _reason = "completed";
 {
     if (!call _valid) exitWith {_reason = "cancelled"};
     _x params ["_support","_movers","_destinations","_seconds","_watch",["_operation",[]]];
-    if (_operation isNotEqualTo [] && {!([_group,_key,_operation] call VCM_fnc_TaskOperation)}) exitWith {_reason = "operation-failed"};
     _state set [3,_forEachIndex + 1];
+    if (_operation isNotEqualTo [] && {!([_group,_key,_operation] call VCM_fnc_TaskOperation)}) exitWith {_reason = "operation-failed"};
+    if (!call _valid) exitWith {_reason = "cancelled"};
     {
         [_x] call VCM_fnc_MovementControl;
         _x setVariable ["VCM_TaskRole",[_key,"support"],true];
@@ -57,10 +68,17 @@ private _reason = "completed";
             private _group = group _unit;
             if (!([_group,_run,_key,_kind] call VCM_fnc_TacticalValid)) exitWith {};
             _unit setVariable ["VCM_LastTaskMove",[_destination,"started",_unit getVariable ["VCM_MoveKey",[]],_unit checkAIFeature "PATH"]];
-            private _arrived = [_unit,_destination,_seconds,{
-                params ["_unit","_group"];
-                [_group,_run,_key,_kind] call VCM_fnc_TacticalValid
-            },_key] call VCM_fnc_MoveTo;
+            private _session = _group getVariable ["VCM_CQBSession",[]];
+            private _arrived = if (_kind == "clear" && {_session isNotEqualTo []} && {(_session select 0) isEqualTo _key}) then {
+                private _building = _session select 1;
+                private _doors = ([_building] call VCM_fnc_CQBDoors);
+                [_unit,_destination,_group,_key,_building,_doors,diag_tickTime + _seconds] call VCM_fnc_CQBMove
+            } else {
+                [_unit,_destination,_seconds,{
+                    params ["_unit","_group"];
+                    [_group,_run,_key,_kind] call VCM_fnc_TacticalValid
+                },_key] call VCM_fnc_MoveTo
+            };
             _unit setVariable ["VCM_LastTaskMove",[_destination,_arrived,getPosATL _unit,currentCommand _unit]];
         });
     } forEach _movers;

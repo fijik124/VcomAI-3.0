@@ -2,6 +2,8 @@ private _group = _this;
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group in VcmAI_ActiveList}) exitWith {};
 [_group] call VCM_fnc_RestoreCombat;
 [_group] call VCM_fnc_EvacRelease;
+private _cqb = _group getVariable ["VCM_CQBSession",[]];
+if (_cqb isNotEqualTo []) then {[_group,_cqb select 0,"owner-changed"] call VCM_fnc_CQBRelease};
 _group setVariable ["VCM_Committed",false,true];
 _group setVariable ["VCM_ATShooter",nil];
 private _mission = _group getVariable ["VCM_CoordMission",[]];
@@ -11,6 +13,7 @@ if (_mission isNotEqualTo [] && {time >= (_mission select 2) || {_mission select
 VCM_RunSerial = VCM_RunSerial + 1;
 private _run = [clientOwner, VCM_RunSerial];
 _group setVariable ["VCM_RunId", _run];
+[_group,"controller ready","Local owner acquired the group; prior reservations were released"] call VCM_fnc_DebugDecision;
 _group setVariable ["VCM_BoundUnits", []];
 _group setVariable ["VCM_PeakStrength",(_group getVariable ["VCM_PeakStrength",0]) max ({alive _x} count units _group),true];
 VcmAI_ActiveList pushBackUnique _group;

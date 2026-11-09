@@ -11,6 +11,7 @@ private _state = [_key, _units, 0, [], [], [], [0,0]];
 _group setVariable ["VCM_BoundSerial", _serial];
 _group setVariable ["VCM_BoundState", _state];
 _group setVariable ["VCM_Committed",true,true];
+[_group,"bound","Advance one team while the other supplies physical covering fire",[],_position] call VCM_fnc_DebugDecision;
 [_group,_key] call VCM_fnc_AttackControl;
 _group setVariable ["VCM_NextBound", diag_tickTime + 45];
 {_x setVariable ["VCM_BoundKey", _key, true]} forEach _units;

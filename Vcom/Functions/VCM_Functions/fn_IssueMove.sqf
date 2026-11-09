@@ -11,8 +11,9 @@ if (_key isNotEqualTo []) then {
     _unit doFire objNull;
 };
 doStop _unit;
-if (_key isNotEqualTo []) then {[_unit] commandMove _position};
+private _indoor = _key isNotEqualTo [] && {(_unit getVariable ["VCM_CQBMoveKey",[]]) isEqualTo _key};
+if (_key isNotEqualTo [] && {!_indoor}) then {[_unit] commandMove _position};
 _unit doMove _position;
-if (_key isNotEqualTo []) then {_unit setDestination [_position,"LEADER PLANNED",true]};
+if (_key isNotEqualTo [] && {!_indoor}) then {_unit setDestination [_position,"LEADER PLANNED",true]};
 if (VCM_Debug) then {_unit setVariable ["VCM_DebugMove",[time,_position,_key],true]};
 true

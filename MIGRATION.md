@@ -5,7 +5,7 @@ The additional behaviors, settings, performance work and addon installation are 
 
 This repository contains VCOM Edited by Fijik as a modular addon and compatible mission scripts. For the mission-script installation, copy `Vcom/` into the mission, include `Vcom/cfgFunctions.hpp` inside `CfgFunctions`, and execute `Vcom/VcomInit.sqf` once from mission `init.sqf`. Merge the supplied `CfgRemoteExec` with the mission's existing configuration. Do not replace other mods' required remote-function declarations.
 
-Version 3.5.0 installs as `@VCOM_Edited_by_Fijik` and contains eight signed PBOs. Remove older VCOM folders before enabling it, including the previous single-PBO `@VCOM_AI` edition. Keep every PBO in the new folder: the main addon declares dependencies on all seven implementation modules. Settings IDs, `VCM_fnc_*` calls and `userconfig/VCOM_AI` remain compatible. Original author credit for Genesis is retained; the launcher and CBA category identify this edition as VCOM Edited by Fijik. See [README.md](README.md) for the module map.
+Version 3.6.0 installs as `@VCOM_Edited_by_Fijik` and contains eight signed PBOs. Remove older VCOM folders before enabling it, including the previous single-PBO `@VCOM_AI` edition. Keep every PBO in the new folder: the main addon declares dependencies on all seven implementation modules. Settings IDs, `VCM_fnc_*` calls and `userconfig/VCOM_AI` remain compatible. Original author credit for Genesis is retained; the launcher and CBA category identify this edition as VCOM Edited by Fijik. See [README.md](README.md) for the module map.
 
 ## Changes
 
@@ -114,6 +114,40 @@ The multiplayer suite covers two headless clients joining in progress, typed set
 
 Run `./tests/run-performance.ps1 -Addon` for matched 128-unit VR combat measurements with VCOM disabled and enabled. The report records mean FPS, 10th-percentile FPS, maximum active SQF scripts and cleanup assertions in `build/performance.csv`. Default measurement time is 60 seconds per variant, following a 15-second warmup. Use `-Seconds 1800` for 30 minutes per variant. This smoke benchmark does not replace campaign or map-specific measurements.
 
+### Room search in 3.6.0
+
+Full search uses sampled indoor floor areas, configured doors, explicit room membership and observed coverage. Door probes are navigation anchors, not additional mandatory search points. A door-only threshold component does not become a room. Each searched room requires physical entry on its floor and unobstructed observation of its mapped points. Inaccessible or limited layouts produce partial reports. The controller does not certify that hidden enemies are absent.
+
+The doorway approach uses verified floor samples because some terrain buildings return below-ground `buildingExit` coordinates. Floor comparisons use absolute height so sloping terrain cannot merge different floors. Native movement and a mission-enabled native FSM handle indoor paths and stairs. The legacy FSM dispatch now schedules building searches instead of calling a suspending routine from an unscheduled action.
+
+Run focused acceptance after building the addon:
+
+```powershell
+./tests/run-runtime.ps1 -Addon -Suite cqb
+./tests/run-runtime.ps1 -Addon -Suite cqb-floors
+./tests/run-multiplayer.ps1 -Addon
+```
+
+The floor suite uses a native Altis terrain house. It first proves that an uncontrolled native soldier can reach its upper floor, then requires VCOM's entry team to physically climb and search every mapped room. Script-spawned models can lack operative native building paths; they require separate acceptance. The CQB suite covers geometry, complete search, mission locks, new orders, feature disable and room limits. Multiplayer checks interrupt an active search during ownership transfer.
+
+The 3.6.0 build uses the `hemtt` command. Static validation compiles 272 SQF files, including the 106 extracted FSM clauses, with zero errors and 340 advisory warnings. Release generation compiles 145 SQF files and eight addon configs. The signed addon is tested without embedded VCOM implementation files.
+
+| Scenario | Result | Workspace logs |
+| --- | --- | --- |
+| Full native regression, vanilla | 170 checks, zero failures | `build/runtime/profiles-20261108-200115` |
+| Complete CQB, limits, locks, cancellation and route telemetry, CBA/ACE | 64 checks, zero failures | `build/runtime/profiles-20261108-203942` |
+| Expanded features, CBA controls and intent telemetry, CBA/ACE | 82 checks, zero failures | `build/runtime/profiles-20261108-204216` |
+| Physical two-floor search, CBA/ACE | 33 checks, zero failures | `build/runtime/profiles-20261108-204346` |
+| Final server/two-HC coordination, intent telemetry and CQB handoff, CBA/ACE | 68 checks, zero failures | `build/multiplayer/run-20261108-211447` |
+| Final 128-unit benchmark, VCOM off | 29 checks, zero failures | `build/runtime/profiles-20261108-211642` |
+| Final 128-unit benchmark, VCOM on | 29 checks, zero failures | `build/runtime/profiles-20261108-211810` |
+
+The final handoff regression caught a reporting race: group and unit locality can change on different engine updates. Cleanup now preserves an `owner-changed` report even when the departing controller first records a partial cancellation. The final correction changes only `vcm_squad.pbo`; the seven other PBO hashes match the broader native runs above. The final focused multiplayer run loads the complete rebuilt PBO set on all three processes and proves actual entry before transfer, restored native flags, cleared sessions and exactly one new controller. The handoff fixture explicitly enables clearing and isolates legacy movement so another controller cannot consume its actors before the room task starts.
+
+The final 128-unit vanilla benchmark uses a 15-second warmup and approximately 61 seconds per variant. Disabled averaged 28.62 server FPS (10th percentile 28.22, maximum five SQF scripts). Enabled averaged 28.81 FPS (10th percentile 28.52, maximum 47 scripts, 16 controllers). Both variants passed uniqueness, shutdown and restoration of all recorded native AI flags. Raw results are in `build/performance.csv`. This short VR scenario does not establish a speedup, measure sustained building-search load or replace long mission-specific testing. Mapping is separately bounded to one automatic job and 16 retained building layouts per owner, with configurable node/time limits; debugger sampling stops when disabled.
+
+The intent debugger reports recorded VCOM decisions, current owner-side native command state and remembered contact positions. It cannot expose the engine's private reasoning or full native path. Dedicated-server tests cover snapshot bounds, disabled collection, actual CQB route publication and room/door telemetry. The graphical overlay still requires visual acceptance on a player client. CQB geometry checks include small houses, two-floor houses and barracks; this does not establish complete traversal of every barracks or modded model.
+
 ### Modular 3.5.0 verification, November 8, 2026
 
 The build uses the `hemtt` command and produces eight signed PBOs. Static validation compiles 258 SQF files, including 106 extracted FSM clauses, with zero errors and 292 advisory warnings. Release generation compiles 134 SQF files and eight addon configs. The installed native engine is Arma 3 2.22.154126, Stable x64 profiling.
@@ -130,7 +164,7 @@ The build uses the `hemtt` command and produces eight signed PBOs. Static valida
 | 128-unit benchmark, VCOM off | 29 checks, zero failures | `build/runtime/profiles-20261108-182041` |
 | 128-unit benchmark, VCOM on | 29 checks, zero failures | `build/runtime/profiles-20261108-182213` |
 
-The final 128-unit vanilla benchmark used a 15-second warmup and approximately 61 seconds per variant. VCOM disabled averaged 28.53 server FPS (10th percentile 28.27, maximum five active SQF scripts). Enabled averaged 28.82 FPS (10th percentile 28.52, maximum 48 scripts, 16 group controllers). Both variants passed controller uniqueness, shutdown and native AI-feature restoration checks. Raw results are in `build/performance.csv`. FPS remained similar in this short scenario; the difference does not establish a speedup or predict another mission's performance.
+The final 128-unit vanilla benchmark used a 15-second warmup and approximately 61 seconds per variant. VCOM disabled averaged 28.53 server FPS (10th percentile 28.27, maximum five active SQF scripts). Enabled averaged 28.82 FPS (10th percentile 28.52, maximum 48 scripts, 16 group controllers). Both variants passed controller uniqueness, shutdown and native AI-feature restoration checks. Historical 3.5.0 results are in `build/performance-3.5.0.csv`. FPS remained similar in this short scenario; the difference does not establish a speedup or predict another mission's performance.
 
 These addon missions load the complete PBO set without embedded VCOM source. New checks cover bounded recovery and reservation cleanup, physical grenade trajectories and real native throw cancellation with conserved ammunition, carried smoke consumption, queued room plans, native anti-tank firing/backblast checks, three distinct squad roles, server-issued cross-owner escort leases, casualty attachment handoff, full evacuation toward improved physical cover, native convoy speed controls, pedestrian halts, CBA registration and bounded debugger data. The new global controls enter the synchronized whitelist; local overlay preferences do not. Debug-off checks verify that event histories stop growing.
 

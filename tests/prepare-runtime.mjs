@@ -5,10 +5,11 @@ import assert from 'node:assert/strict';
 import { addonAssertions } from '../tools/addon-project.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const folder = path.join(root, 'build/runtime/VCM_Regression.VR');
 const suite = process.argv[2] || 'all';
+const world = suite === 'cqb-floors' ? 'Altis' : 'VR';
+const folder = path.join(root, `build/runtime/VCM_Regression.${world}`);
 const addon = process.argv.includes('--addon');
-assert.ok(['all','safety','tactics','vehicle','performance','advanced'].includes(suite));
+assert.ok(['all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors'].includes(suite));
 const seconds = Number(process.argv.find(arg => arg.startsWith('--duration='))?.split('=')[1] || 60);
 assert.ok(Number.isInteger(seconds) && seconds >= 30 && seconds <= 1800);
 assert.equal(path.dirname(folder), path.join(root,'build/runtime'));
@@ -30,6 +31,9 @@ fs.copyFileSync(path.join(root, 'tests/performance.sqf'), path.join(folder, 'per
 fs.copyFileSync(path.join(root, 'tests/advanced.sqf'), path.join(folder, 'advanced.sqf'));
 fs.copyFileSync(path.join(root, 'tests/coordination.sqf'), path.join(folder, 'coordination.sqf'));
 fs.copyFileSync(path.join(root, 'tests/evacuation.sqf'), path.join(folder, 'evacuation.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cqb.sqf'), path.join(folder, 'cqb.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cqb-control.sqf'), path.join(folder, 'cqb-control.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cqb-floors.sqf'), path.join(folder, 'cqb-floors.sqf'));
 if (suite !== 'all') fs.writeFileSync(path.join(folder,'regression.sqf'), `if (!isServer) exitWith {};
 waitUntil {sleep 0.1; missionNamespace getVariable ["VCM_ServerReady",false]};
 VCM_TestCount=0; VCM_TestFailures=0;
@@ -42,8 +46,8 @@ diag_log format ["VCM_TEST_DONE: %1 checks, %2 failures",VCM_TestCount,VCM_TestF
 fs.writeFileSync(path.join(folder, 'init.sqf'), (addon ? '' : '[] execVM "Vcom\\VcomInit.sqf";\n') + '[] execVM "regression.sqf";\n');
 fs.writeFileSync(path.join(folder, 'mission.sqm'), `version=12;
 class Mission {
- addOns[]={"A3_Characters_F_BLUFOR","A3_Map_VR"};
- addOnsAuto[]={"A3_Characters_F_BLUFOR","A3_Map_VR"};
+ addOns[]={"A3_Characters_F_BLUFOR","A3_Map_${world}"};
+ addOnsAuto[]={"A3_Characters_F_BLUFOR","A3_Map_${world}"};
  randomSeed=1;
  class Intel { briefingName="VCOM regression"; resistanceWest=0; resistanceEast=1; startWeather=0; forecastWeather=0; year=2035; month=6; day=24; hour=12; minute=0; };
  class Groups { items=1; class Item0 { side="WEST"; class Vehicles { items=1; class Item0 { position[]={500,0,500}; azimut=0; id=0; side="WEST"; vehicle="B_Soldier_F"; player="PLAY CDG"; leader=1; skill=0.6; init="(group this) setVariable ['Vcm_Disable',true];"; }; }; }; };

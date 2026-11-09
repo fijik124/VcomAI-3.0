@@ -1,6 +1,6 @@
 {
   "name": "VCOM Edited by Fijik",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "prefix": "vcm",
   "modFolder": "@VCOM_Edited_by_Fijik",
   "archiveName": "VCOM_Edited_by_Fijik",
@@ -46,6 +46,8 @@
         "CanFollow",
         "FeatureSettings",
         "DebugTrace",
+        "DebugDecision",
+        "DebugState",
         "DebugPublish",
         "DebugUI",
         "PlanBudget",
@@ -90,7 +92,16 @@
         "WyptChk",
         "SmokeCover",
         "OpenNearDoors",
-        "TaskOperation"
+        "TaskOperation",
+        "CQBDoors",
+        "CQBFloor",
+        "CQBLink",
+        "CQBLayout",
+        "CQBRoute",
+        "CQBMove",
+        "CQBRoomAt",
+        "CQBRelease",
+        "ClearRooms"
       ]
     },
     {

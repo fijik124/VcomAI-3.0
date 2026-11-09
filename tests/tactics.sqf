@@ -125,12 +125,18 @@ _enemy allowDamage false;
 _group reveal [_enemy,4];
 sleep 0.2;
 VCM_BUILDINGCLEARING = true;
+if (VCM_FULLCLEAR && {VCM_CQBSECTORS}) then {[_building] call VCM_fnc_CQBLayout};
 private _clearPlan = [_group,_enemy] call VCM_fnc_ClearBuildingPlan;
 [_clearPlan isNotEqualTo [], "remembered indoor contact receives a building-entry plan"] call _assert;
 if (_clearPlan isNotEqualTo []) then {
-    private _queue = (_clearPlan select 4) select [1];
-    [_queue findIf {count (_x select 1) != 1} < 0,"room progression queues exactly one entry mover per phase"] call _assert;
-    [count _queue <= VCM_CQBROOMS,"room progression respects the configured position limit"] call _assert;
+    if ((_clearPlan param [6,[]]) isNotEqualTo []) then {
+        [(_clearPlan select 4 select 1 select 5 select 0) == "clearRooms","room progression delegates to the full search controller"] call _assert;
+        [count (_clearPlan select 6 select 3) > 1,"full search includes multiple mapped rooms"] call _assert;
+    } else {
+        private _queue = (_clearPlan select 4) select [1];
+        [_queue findIf {count (_x select 1) != 1} < 0,"room progression queues exactly one entry mover per phase"] call _assert;
+        [count _queue <= VCM_CQBROOMS,"room progression respects the configured position limit"] call _assert;
+    };
     [count (_clearPlan select 1) == 2 && {count (_clearPlan select 2) == 2}, "building plan splits outside support and entry teams"] call _assert;
     [((_clearPlan select 1) arrayIntersect (_clearPlan select 2)) isEqualTo [], "building roles do not overlap"] call _assert;
     _job = [_group,_enemy] spawn VCM_fnc_ClearBuilding;

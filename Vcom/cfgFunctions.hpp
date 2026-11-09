@@ -18,6 +18,8 @@ class VCOM
 		file = "Vcom\Functions\VCM_Functions";
 		class InitSettings { preInit = 1; };
 		class DebugTrace {};
+		class DebugDecision {};
+		class DebugState {};
 		class DebugPublish {};
 		class DebugUI {};
 		class PlanBudget {};
@@ -36,6 +38,15 @@ class VCOM
 		class ConvoyRelease {};
 		class ConvoyTick {};
 		class FeatureSettings {};
+		class CQBDoors {};
+		class CQBFloor {};
+		class CQBLink {};
+		class CQBLayout {};
+		class CQBRoute {};
+		class CQBMove {};
+		class CQBRoomAt {};
+		class CQBRelease {};
+		class ClearRooms {};
 		class CoordReady {};
 		class CoordRelease {};
 		class CoordRequest {};

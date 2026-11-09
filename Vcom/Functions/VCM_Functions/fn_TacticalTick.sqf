@@ -2,9 +2,14 @@ params ["_group"];
 private _strength = {alive _x} count units _group;
 private _peak = _group getVariable ["VCM_PeakStrength",0];
 if (_strength > _peak) then {_group setVariable ["VCM_PeakStrength",_strength,true]};
-if (_group getVariable ["VCM_NOAUTOTACTICS",false]) exitWith {};
+if (_group getVariable ["VCM_NOAUTOTACTICS",false]) exitWith {
+    if (_group getVariable ["VCM_Task",[]] isEqualTo []) then {[_group,"native","Mission disabled automatic tactical planning"] call VCM_fnc_DebugDecision};
+};
 if (time < ((_group getVariable ["VCM_CoordMission",[]]) param [2,-1])) exitWith {};
-if (_strength < 2 || {_group getVariable ["VCM_Task",[]] isNotEqualTo []} || {_group getVariable ["VCM_NOFLANK",false]}) exitWith {};
+if (_group getVariable ["VCM_Task",[]] isNotEqualTo []) exitWith {};
+if (_strength < 2 || {_group getVariable ["VCM_NOFLANK",false]}) exitWith {
+    [_group,"native",if (_strength < 2) then {"Too few surviving soldiers for a team maneuver"} else {"Mission disabled autonomous maneuvers"}] call VCM_fnc_DebugDecision;
+};
 private _evac = [_group] call VCM_fnc_EvacPlan;
 if (_evac isNotEqualTo []) exitWith {[_group,_evac] spawn VCM_fnc_Evacuate};
 private _retreat = [_group] call VCM_fnc_RetreatPlan;
@@ -13,13 +18,14 @@ if (_retreat isNotEqualTo [] && {_group getVariable ["VCM_Task",[]] isEqualTo []
     if (_bound isNotEqualTo []) then {[_group,_bound select 0,"withdrawal"] call VCM_fnc_EndFireMove};
 };
 if (_retreat isNotEqualTo [] && {[_group] call VCM_fnc_TacticalReady}) exitWith {[_group,_retreat] spawn VCM_fnc_Retreat};
-if (!([_group] call VCM_fnc_TacticalReady)) exitWith {};
+if (!([_group] call VCM_fnc_TacticalReady)) exitWith {[_group,"mission control","Authored orders, a player, or another reservation takes priority"] call VCM_fnc_DebugDecision};
 private _enemy = leader _group call VCM_fnc_ClstEmy;
 private _contact = [leader _group,_enemy] call VCM_fnc_ContactPosition;
-if (_contact isEqualTo []) exitWith {};
+if (_contact isEqualTo []) exitWith {[_group,"native","No usable remembered hostile contact"] call VCM_fnc_DebugDecision};
 private _send = {
     params ["_kind",["_target",_enemy],["_position",_contact],["_asset",objNull]];
     private _request = [_group,_kind,_target,_position,_asset,player];
+    [_group,"coordinate",format ["Request %1 assignment from the server coordinator",_kind],[],_position] call VCM_fnc_DebugDecision;
     if (isServer) then {_request call VCM_fnc_CoordRequest} else {_request remoteExecCall ["VCM_fnc_CoordRequest",2]};
 };
 private _requested = false;

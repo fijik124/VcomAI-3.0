@@ -1,5 +1,5 @@
 /* Scheduled, bounded movement. The caller retains responsibility for follow-up orders. */
-params ["_unit", "_position", ["_timeout", 45], ["_guard", {true}], ["_taskKey",[]]];
+params ["_unit", "_position", ["_timeout", 45], ["_guard", {true}], ["_taskKey",[]], ["_floorTolerance",-1]];
 private _group = group _unit;
 private _run = _group getVariable ["VCM_RunId", []];
 if (!([_unit, _group, _run] call VCM_fnc_ActionValid) || {!(_unit checkAIFeature "PATH")}) exitWith {false};
@@ -8,6 +8,10 @@ if (_unit getVariable ["VCM_MoveKey", []] isNotEqualTo [] || {_group getVariable
 private _moveKey = [_run, diag_tickTime];
 _unit setVariable ["VCM_MoveKey", _moveKey];
 private _deadline = diag_tickTime + _timeout;
+private _atDestination = {
+    _unit distance _position < 2 && {_floorTolerance < 0 ||
+        {abs ((getPosASL _unit select 2) - (ATLToASL _position select 2)) < _floorTolerance}}
+};
 [_unit,_position,_run,_taskKey] call VCM_fnc_IssueMove;
 private _nextReplan = diag_tickTime + VCM_UNSTUCKSECONDS;
 private _lastPosition = getPosATL _unit;
@@ -39,10 +43,10 @@ waitUntil {
     };
     !([_unit, _group, _run] call VCM_fnc_ActionValid) || {!([_unit, _group] call _guard)} ||
     {!((_unit getVariable ["VCM_TaskKey",[]]) isEqualTo _taskKey)} ||
-    {_exhausted} || {diag_tickTime >= _deadline} || {_unit distance _position < 2}
+    {_exhausted} || {diag_tickTime >= _deadline} || {call _atDestination}
 };
 private _arrived = [_unit, _group, _run] call VCM_fnc_ActionValid && {[_unit, _group] call _guard} &&
-    {(_unit getVariable ["VCM_TaskKey",[]]) isEqualTo _taskKey} && {_unit distance _position < 2};
+    {(_unit getVariable ["VCM_TaskKey",[]]) isEqualTo _taskKey} && {call _atDestination};
 if (_moveKey isEqualTo (_unit getVariable ["VCM_MoveKey", []])) then {_unit setVariable ["VCM_MoveKey", nil]};
 if (!_arrived) then {[group _unit,"move-failed",format ["%1 goal %2 attempts %3",_unit,_position,_attempt]] call VCM_fnc_DebugTrace};
 _arrived

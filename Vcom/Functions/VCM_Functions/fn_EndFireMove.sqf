@@ -2,6 +2,7 @@ params ["_group", "_key", ["_reason", "cancelled"]];
 private _state = _group getVariable ["VCM_BoundState", []];
 if (_state isEqualTo [] || {!((_state select 0) isEqualTo _key)}) exitWith {};
 [_group,"bound-end",_reason] call VCM_fnc_DebugTrace;
+if (local _group) then {[_group,"bound ended",_reason] call VCM_fnc_DebugDecision};
 _group setVariable ["VCM_LastBoundDetail",[_state select 2,(_state select 4) apply {[getPosATL _x,currentCommand _x]},_state select 5]];
 {[_x, _key] call VCM_fnc_ReleaseBoundUnit} forEach (_state select 1);
 _group setVariable ["VCM_LastBound", [_reason, +(_state select 6)]];

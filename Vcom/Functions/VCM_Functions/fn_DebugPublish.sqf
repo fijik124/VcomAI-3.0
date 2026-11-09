@@ -19,3 +19,4 @@ _group setVariable ["VCM_DebugInfo",[clientOwner,diag_fps,_kind,_phase,
     _group getVariable ["VCM_LastTask",[]],_group getVariable ["VCM_LastPlanMS",0],
     _group getVariable ["VCM_PlanInterval",2],_history,
     (keys _counters) apply {[_x,_counters get _x]},time],true];
+_group setVariable ["VCM_DebugState",[_group] call VCM_fnc_DebugState,true];

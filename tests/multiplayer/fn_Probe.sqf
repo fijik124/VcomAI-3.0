@@ -9,7 +9,7 @@ private _states = _groups apply {
             [local _x, _x getVariable ["VCM_Handlers", []], _x getVariable ["VCM_BoundKey", []],
                 _x getVariable ["VCM_MoveKey", []], _x checkAIFeature "PATH", backpack _x,
                 _x getVariable ["VCM_StoredGrenades",[]],magazines _x,_x checkAIFeature "FIREWEAPON",
-                _x getVariable ["VCM_TaskKey",[]]]
+                _x getVariable ["VCM_TaskKey",[]],_x checkAIFeature "TARGET",_x checkAIFeature "FSM"]
         }]
 };
 private _moduleChecks = (missionNamespace getVariable ["VCM_TestAddonChecks",[]]) apply {

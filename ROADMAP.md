@@ -1,5 +1,23 @@
 # VCOM Edited by Fijik roadmap
 
+## AI decision debugger in 3.6.0
+
+- Show each group's recorded VCOM action, native commands, roles, remembered threat and reason for choosing its plan.
+- Draw intended destinations, planned CQB routes, door state and observed room coverage.
+- Explain safety holds, locked doors, retries, cancellations and incomplete searches.
+- Keep visualization optional through CBA, with bounded snapshots, distance limits and update intervals.
+
+## Room search in 3.6.0
+
+- Expand native building positions with physical floor samples and a cached door/floor graph.
+- Stack at a verified doorway and move one entry soldier at a time while others cover.
+- Retain native indoor path behavior for stairs and door interaction.
+- Track room entry, observed coverage, blocked rooms and partial-search reasons.
+- Honor mission locks, task cancellation and ownership changes; retain interrupted reports.
+- Expose full-search, room, node, observation and time limits through CBA and show progress in the debugger.
+
+Native acceptance results and model limits are recorded in [MIGRATION.md](MIGRATION.md).
+
 ## Implemented for 3.5.0
 
 All ten requested additions have runtime implementations. The native acceptance matrix and remaining limits are recorded in [MIGRATION.md](MIGRATION.md); feature controls are described in [FEATURES.md](FEATURES.md).
@@ -45,7 +63,8 @@ See [FEATURES.md](FEATURES.md) for settings, thresholds, installation and practi
 
 ## Remaining acceptance checks
 
-- Visual review of the debugger labels, destination lines and panel on a graphical player client.
+- Visual review of the debugger labels, routes, room/door markers and panel on a graphical player client.
+- Complete traversal of more terrain and modded buildings, especially large barracks and unusual floor/door models.
 - Graphical player clients joining from another computer, with and without CBA/ACE.
 - Zeus spawning, leader changes and direct player control.
 - Mission-specific medical, rearming, transport and artillery cases.

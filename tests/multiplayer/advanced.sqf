@@ -41,6 +41,11 @@ private _telemetry = [{_groups findIf {
     _info param [0,-1] != groupOwner _x || {_info param [1,0] <= 0} || {count (_info param [7,[]]) > 5}
 } < 0},5] call _await;
 [_telemetry,"debugger receives correctly owned bounded telemetry from server and both HCs"] call _assert;
+private _intent = [{_groups findIf {
+    private _snapshot = _x getVariable ["VCM_DebugState",[]];
+    count _snapshot != 6 || {count (_snapshot select 2) != 4} || {(_snapshot select 1) isEqualTo []}
+} < 0},5] call _await;
+[_intent,"debugger receives native command rows and recorded decision reasons from all three owners"] call _assert;
 {private _order = _x addWaypoint [[14900,14900,0],0]; _order setWaypointName "MP_COORD_ABORT"} forEach _groups;
 private _released = [{_groups findIf {_x getVariable ["VCM_CoordMission",[]] isNotEqualTo []} < 0},5] call _await;
 [_released,"mission orders release coordination leases on all three owners"] call _assert;
@@ -103,4 +108,41 @@ sleep 0.5;
 {deleteVehicle _x} forEach (_infantryUnits + [_driver,_vehicle,_enemy]);
 deleteGroup _infantry;
 deleteGroup _crew;
+// Interrupt an actual full-room controller after exterior staging, then inspect its new owner.
+VCM_BUILDINGCLEARING = true; VCM_FULLCLEAR = true; VCM_CQBSECTORS = true;
+VCM_ADVANCEDMOVEMENT = false; VCM_FIREMOVEMENT = false; VCM_StealVeh = false;
+private _clearGroup = createGroup [west,true];
+_clearGroup setVariable ["VCM_Skilldisable",true,true];
+_clearGroup setVariable ["VCM_NOAUTOTACTICS",true,true];
+private _clearUnits = [];
+for "_i" from 0 to 3 do {
+    private _actor = _clearGroup createUnit ["B_Soldier_F",[8000,12000 + _i * 5,0],[],0,"NONE"];
+    _actor allowDamage false; _clearUnits pushBack _actor;
+};
+private _clearHouse = createVehicle ["Land_i_House_Small_01_V1_F",[8025,12000,0],[],0,"CAN_COLLIDE"];
+private _clearEnemy = _opfor createUnit ["O_Soldier_F",(_clearHouse buildingPos -1) select 0,[],0,"NONE"];
+_clearEnemy disableAI "ALL"; _clearEnemy allowDamage false;
+_clearGroup setCombatMode "GREEN"; _clearGroup setBehaviour "COMBAT";
+_clearGroup reveal [_clearEnemy,4]; _clearGroup call VCM_fnc_SquadExc;
+[_clearHouse] call VCM_fnc_CQBLayout;
+private _ready = [{count ([_clearGroup] call VCM_fnc_TacticalUnits) >= 4 &&
+    {([leader _clearGroup,_clearEnemy] call VCM_fnc_ContactPosition) isNotEqualTo []}},6] call _await;
+diag_log format ["VCM_CQB_MP_READY: ready=%1 eligible=%2 plan=%3 flags=%4 units=%5",_ready,count ([_clearGroup] call VCM_fnc_TacticalUnits),
+    ([_clearGroup,_clearEnemy] call VCM_fnc_ClearBuildingPlan) isNotEqualTo [],[VCM_BUILDINGCLEARING,VCM_FULLCLEAR,VCM_CQBSECTORS],
+    _clearUnits apply {[currentCommand _x,_x getVariable ["VCM_MoveKey",[]],_x getVariable ["VCM_MBUSY",false]]}];
+[_clearGroup,_clearEnemy] spawn VCM_fnc_ClearBuilding;
+private _clearing = [{((_clearGroup getVariable ["VCM_CQBProgress",[]]) param [3,-1]) >= 0},40] call _await;
+[_ready && {_clearing},"full room search is physically active before ownership transfer"] call _assert;
+private _oldClearKey = (_clearGroup getVariable ["VCM_CQBSession",[]]) param [0,[]];
+[_clearGroup,_first,"active room search to HC1"] call _transfer;
+private _clearProbe = [_first,"room-handoff",[_clearGroup]] call _probe;
+private _clearState = (_clearProbe param [3,[]]) param [0,[]];
+[_clearGroup getVariable ["VCM_CQBSession",[]] isEqualTo [] &&
+    {((_clearGroup getVariable ["VCM_CQBProgress",[]]) param [2,""]) == "owner-changed"},"new owner releases the room session and retains an interrupted search report"] call _assert;
+[count _clearState > 0 && {_clearState select 2 == 1} &&
+    {(_clearState select 5) findIf {(_x select 9) isEqualTo _oldClearKey || {!(_x select 10)} || {!(_x select 11)}} < 0},
+    "room-search handoff restores native behavior and leaves exactly one controller"] call _assert;
+_clearGroup setVariable ["Vcm_Disable",true,true]; sleep 0.5;
+{deleteVehicle _x} forEach (_clearUnits + [_clearHouse,_clearEnemy]);
+deleteGroup _clearGroup;
 VCM_Debug = false;

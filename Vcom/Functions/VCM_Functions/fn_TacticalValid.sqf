@@ -10,6 +10,8 @@ private _setting = switch (_kind) do {
 };
 [_group] call VCM_fnc_GroupEnabled && {_run isEqualTo (_group getVariable ["VCM_RunId",[]])} &&
 {missionNamespace getVariable [_setting,false]} && {!(_group getVariable ["VCM_NOFLANK",false])} &&
+{_kind != "clear" || {_group getVariable ["VCM_CQBSession",[]] isEqualTo []} || {VCM_FULLCLEAR && {VCM_CQBSECTORS} &&
+    {alive ((_group getVariable ["VCM_CQBSession",[]]) param [1,objNull])}}} &&
 {!(_kind in ["cooperate","antitank"]) || {
     private _mission = _group getVariable ["VCM_CoordMission",[]];
     _mission isNotEqualTo [] && {time < (_mission select 2)} && {_mission select 3 == clientOwner}

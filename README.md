@@ -2,7 +2,7 @@
 
 An edited VCOM AI edition for Arma 3 2.22 or newer. Original VCOM by Genesis; this edition is edited by Fijik. CBA and ACE are optional.
 
-The 3.5.0 addon is split into eight signed PBOs:
+The 3.6.0 addon is split into eight signed PBOs:
 
 | PBO | Responsibilities |
 | --- | --- |
@@ -28,10 +28,12 @@ node tests/validate.mjs
 node tools/build-release.mjs
 ./tests/run-runtime.ps1 -Addon
 ./tests/run-runtime.ps1 -Addon -Suite advanced
+./tests/run-runtime.ps1 -Addon -Suite cqb
+./tests/run-runtime.ps1 -Addon -Suite cqb-floors
 ./tests/run-multiplayer.ps1 -Addon
 ./tools/package-upload.ps1
 ```
 
-Version 3.5.0 adds bounded recovery, outdoor grenade checks, smoke cover, queued room entry, anti-tank reservations, multi-squad roles, cross-owner escorts, adaptive planning, casualty evacuation and convoy controls. CBA exposes feature switches and numeric controls. To inspect AI, enable the server's **Enable debugger telemetry and event log** setting, then the player's **Debugger: show local 3D overlay** setting under **VCOM Edited by Fijik**. Both default off.
+Version 3.6.0 adds full mapped room search with geometry sampling, floor and door routes, doorway stacking, observed coverage and partial-search reports. Native indoor movement retains its mission-enabled FSM. The debugger displays chosen actions and reasons, native commands, intended destinations, planned CQB routes, room coverage and live door states. CBA exposes search limits and observation timing alongside existing controls. To inspect AI, enable the server's **Enable debugger telemetry and event log** setting, then the player's **Debugger: show local 3D overlay** setting under **VCOM Edited by Fijik**. Both default off.
 
-Output: `build/upload/VCOM_Edited_by_Fijik-3.5.0.zip`. See [FEATURES.md](FEATURES.md) for behaviors and settings, [MIGRATION.md](MIGRATION.md) for verification, and [ROADMAP.md](ROADMAP.md) for remaining acceptance scenarios.
+Output: `build/upload/VCOM_Edited_by_Fijik-3.6.0.zip`. See [FEATURES.md](FEATURES.md) for behaviors and settings, [MIGRATION.md](MIGRATION.md) for verification, and [ROADMAP.md](ROADMAP.md) for remaining acceptance scenarios.

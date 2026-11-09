@@ -31,6 +31,9 @@ fs.copyFileSync(path.join(root, 'tests/performance.sqf'), path.join(addon, 'perf
 fs.copyFileSync(path.join(root, 'tests/advanced.sqf'), path.join(addon, 'advanced.sqf'));
 fs.copyFileSync(path.join(root, 'tests/coordination.sqf'), path.join(addon, 'coordination.sqf'));
 fs.copyFileSync(path.join(root, 'tests/evacuation.sqf'), path.join(addon, 'evacuation.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cqb.sqf'), path.join(addon, 'cqb.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cqb-control.sqf'), path.join(addon, 'cqb-control.sqf'));
+fs.copyFileSync(path.join(root, 'tests/cqb-floors.sqf'), path.join(addon, 'cqb-floors.sqf'));
 fs.cpSync(path.join(root, 'tests/multiplayer'), path.join(addon, 'mp'), { recursive: true });
 fs.copyFileSync(path.join(root, 'userconfig/VCOM_AI/AISettingsV3.hpp'), path.join(addon, 'userconfig.sqf'));
 const [versionMajor,versionMinor,versionPatch] = project.version.split('.');

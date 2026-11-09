@@ -1,6 +1,27 @@
-# VCOM Edited by Fijik 3.5.0 feature guide
+# VCOM Edited by Fijik 3.6.0 feature guide
 
 This update targets Arma 3 2.22 or newer. CBA and ACE are optional. Existing medical, rearming, static weapons, mines, formation, vehicle use and artillery functions remain available.
+
+## Full mapped room search in 3.6.0
+
+`VCM_BUILDINGCLEARING`, `VCM_CQBSECTORS` and `VCM_FULLCLEAR` enable a complete search of the building's mapped indoor areas. Geometry sampling expands native building positions, separates floors, identifies door crossings and groups connected indoor search points. Layouts are cached per AI owner, with at most 16 retained buildings and one automatic mapping job at a time. Mapping runs outside the group's safety watcher. Building movement, damage and changed sampling limits invalidate the cache.
+
+The entry team stacks near the actual entrance. One soldier moves while partners cover the rear and outside approaches. Movers use native indoor navigation and retain a mission-enabled native FSM for stairs and door interactions. Nearby unlocked configured doors can open; mission locks remain authoritative. Door locks are checked live when choosing routes and while approaching a doorway. A failed observation point can be covered from another reachable position.
+
+A room receives a search record only after a soldier enters its detected room on the correct floor and completes a sector scan with unobstructed observation of its search points. The search continues after the initial reported contact disappears. `searched` means all mapped rooms were observed; it does not certify that every hidden enemy is dead. A remaining known hostile produces `searched-contact-remains`. Locked or unreachable rooms, sampling limits, room limits and timeouts produce a partial report with reasons. New mission orders, feature disable, casualties and ownership changes release owned unit state. Ownership handoff retains an interrupted report.
+
+Additional CBA controls:
+
+| Setting | Default | Purpose |
+| --- | ---: | --- |
+| `VCM_FULLCLEAR` | `true` | Use the full mapped-room search controller. |
+| `VCM_CQBROOMS` | `32` | Maximum rooms attempted; reaching the limit reports partial coverage. |
+| `VCM_CQBSECONDS` | `35` | Deadline for exterior staging and each room search, in seconds. |
+| `VCM_CQBTIME` | `300` | Total interior search deadline, in seconds. |
+| `VCM_CQBSCAN` | `2` | Observation time at a search position, in seconds. |
+| `VCM_CQBNODES` | `256` | Maximum sampled points retained in one building layout. |
+
+Existing saved `VCM_CQBROOMS` values remain in effect. A saved value of eight now limits attempts to eight rooms. The debugger shows current room, searched/total rooms, blocked count and final reason. Layouts infer rooms from geometry and configured door data; unusual models, inaccessible native paths and script-spawned buildings require map-specific acceptance. Explosive breaching is not added, and locked doors are not bypassed.
 
 ## New controls and debugger
 
@@ -12,9 +33,19 @@ To enable the debugger:
 2. On each player who needs the view, enable **Debugger: show local 3D overlay** (`VCM_DEBUGOVERLAY`). This preference is local.
 3. Point at an AI group to inspect it; otherwise the nearest group with recent telemetry is selected.
 
-Labels show group, task, role, life state and current owner. Lines show VCOM movement destinations. The panel shows local and owner FPS, task phase, last result, measured planning time, planning interval, recent events and counters. RPT events include the owner, run token and reason for task completion/cancellation, failed movement, recovery, smoke decisions and firing vetoes. Debug history is bounded (30 records per group by default); network summaries contain only the latest five events, at two-second intervals by default. Label count and range are bounded and adjustable locally. Turning the local overlay off removes its Draw3D handler, cached labels and panel. Turning telemetry off stops collection, publication and debug RPT events. Existing bounded history remains available until the mission ends. Debugging is disabled by default.
+Labels show group, task, role, native command, behavior and suppression. Lines show owner-reported movement destinations. The panel shows local and owner FPS, task phase, last result, measured planning time, planning interval, recent events and counters. RPT events include the owner, run token and reason for task completion/cancellation, failed movement, recovery, smoke decisions and firing vetoes. Debug history is bounded (30 records per group by default); network summaries contain only the latest five events, at two-second intervals by default. Label count and range are bounded and adjustable locally. Turning the local overlay off removes its Draw3D handler, cached labels and panel. Turning telemetry off stops collection, publication and debug RPT events. Existing bounded history remains available until the mission ends. Debugging is disabled by default.
 
 Telemetry reports observed state and wall-clock planning duration, including scheduler delays. It is a diagnostic view, not a script breakpoint debugger or a precise CPU profiler. The 3D renderer requires a graphical player client; dedicated servers and headless clients publish data without drawing.
+
+## AI intent debugger in 3.6.0
+
+Enable **Enable debugger telemetry and event log** and **Debugger: show local 3D overlay** in CBA Addon Options. Point at a soldier to select its squad; otherwise the nearest visible squad is selected. The panel shows the controller's chosen action and reason, current phase, owner, FPS, planning time, recent events and incomplete-search reasons. Unit labels show native command, behavior, suppression percentage, role and safety holds or recent route retries.
+
+Destination lines show current owner-reported movement endpoints. The selected squad adds a cyan planned CQB route, yellow intended goal and red remembered threat marker. Room markers show observed point counts: green searched, yellow active, gray pending and red blocked. Door labels distinguish open, closed and mission-locked doors. Toggle planned destinations/routes and room/door markers separately with `VCM_DEBUGPLANS` and `VCM_DEBUGROOMS`; both are local preferences under the overlay switch.
+
+The display reports actual VCOM decisions and native command state. It cannot read the engine's private reasoning or full native path. A planned CQB graph route can differ from the native path actually walked. Threat markers use remembered contact positions, not hidden enemies' exact positions. Telemetry is diagnostic information for mission builders and should be disabled in normal play.
+
+Collection stops when server debugging is disabled. Publication uses the existing configurable interval. Each group snapshot limits units to 64, planned route points to 32, rooms to 32 and doors to 48. Drawing uses cached data, the existing distance/unit limits and only the selected squad's room geometry. Stale owner snapshots expire after ten seconds.
 
 ## Additional AI behavior in 3.5.0
 
@@ -23,7 +54,7 @@ Telemetry reports observed state and wall-clock planning duration, including sch
 | Stuck movers | `VCM_UNSTUCK=true`, `VCM_UNSTUCKSECONDS=4`, `VCM_UNSTUCKTRIES=3`, `VCM_UNSTUCKRADIUS=5` | Short physical alternate destinations, finite retries and unchanged task deadlines; never teleports or enables mission-disabled pathfinding. |
 | Outdoor grenade safety | `VCM_GRENADESAFETY=true`, `VCM_GRENADEFRIENDLY=15` | Bounded ballistic samples reject geometry collisions and lethal impact points near non-hostiles. Rejected native throws conserve their magazine. |
 | Smoke cover | `VCM_SMOKECOVER=true`, `VCM_SMOKECOOLDOWN=45` | Withdrawal/rescue support can throw carried smoke toward the threat using native ammunition. Barracks restrictions still apply. Chemlights and lethal smoke are excluded. |
-| Room progression | `VCM_CQBSECTORS=true`, `VCM_CQBROOMS=8`, `VCM_CQBSECONDS=35` | Exterior staging precedes a one-mover entry queue and distinct building positions. Support watches sectors. Nearby unlocked configured doors may open; mission locks are respected. |
+| Room progression | `VCM_CQBSECTORS=true`, `VCM_CQBROOMS=32`, `VCM_CQBSECONDS=35` | Full room search is described above. Turning `VCM_FULLCLEAR` off retains the legacy position queue. Support watches sectors and mission locks remain authoritative. |
 | Anti-tank coordination | `VCM_ATCOORD=true`, `VCM_ATRANGE=500`, `VCM_ATLEASE=20` | Server reserves a known ground vehicle for one launcher. Owner checks firing rules, front lane and a 15-meter backblast area. One rocket is allowed per reservation, with brief covering support afterward. |
 | Multi-squad roles | `VCM_MULTISQUAD=true`, `VCM_COORDRANGE=500`, `VCM_COORDCOOLDOWN=45` | Server assigns at most three nearby ready radio-equipped squads assault, support and flank roles. Each owner executes bounded local movement/support tasks. |
 | Cross-owner escorts | `VCM_CROSSOWNER_ESCORT=true`, plus `VCM_COMBINEDARMS` | Server leases a nearby friendly ground vehicle to an infantry group on another owner. Separate jobs stage the vehicle, screen it and unload eligible stationary passengers without changing ownership. New routes or expired leases cancel cooperation. |
@@ -33,7 +64,7 @@ Telemetry reports observed state and wall-clock planning duration, including sch
 
 Distances are meters, times are seconds, and convoy speed is km/h. ACE casualty evacuation requires explicit `VCM_ACECASEVAC=true`; it defaults false. It uses owned native attachments and reads ACE unconsciousness, without calling ACE's private drag functions or performing treatment. Mission-specific ACE interaction remains an acceptance case.
 
-Grenade prediction uses a short gravity-only trajectory and snapshot friendly checks. Modded drag, fuses, penetration, geometry and units moving into the blast area can differ. Smoke selection recognizes non-lethal native smoke simulations with a configured smoke effect; custom effects without a smoke name need explicit mod acceptance. Room progression follows configured `buildingPos` points, not a semantic room/door navigation mesh. It does not guarantee a full building search or path around locked doors. Recovery remains subject to native pathfinding. The planning budget is soft and establishes no guaranteed FPS increase.
+Grenade prediction uses a short gravity-only trajectory and snapshot friendly checks. Modded drag, fuses, penetration, geometry and units moving into the blast area can differ. Smoke selection recognizes non-lethal native smoke simulations with a configured smoke effect; custom effects without a smoke name need explicit mod acceptance. Legacy room progression follows configured `buildingPos` points; full mode expands those into a geometry-derived search graph. Native pathfinding and model geometry still determine which areas can be reached and observed. The planning budget is soft and establishes no guaranteed FPS increase.
 
 ## Firing and indoor safety
 
@@ -76,7 +107,7 @@ All feature toggles above are synchronized server settings and CBA checkboxes. E
 
 Run `./tests/run-performance.ps1 -Addon` for sequential VCOM-off/on measurements using the same 128-unit VR combat setup. It records mean FPS, 10th-percentile FPS, active script counts and cleanup checks in `build/performance.csv`. This is a repeatable stress smoke test, not a guarantee for another map, modset or long campaign. Use `-Seconds 1800` for a 30-minute measurement of each variant.
 
-The final 3.5.0 benchmark averaged 28.53 server FPS disabled and 28.82 enabled over approximately 61 seconds per variant on November 8, 2026. All 16 enabled squad controllers shut down cleanly, with no duplicated controllers or unrestored native AI flags. FPS remained similar; this short run does not establish a speedup. The eight-PBO layout itself establishes no FPS increase. See [MIGRATION.md](MIGRATION.md) for verification results, the historical 3.4.0 measurement and log locations.
+The final 3.6.0 benchmark averaged 28.62 server FPS disabled and 28.81 enabled over approximately 61 seconds per variant on November 8, 2026. All 16 enabled squad controllers shut down cleanly, with no duplicated controllers or unrestored native AI flags. FPS remained similar; this short VR run does not establish a speedup or measure sustained building-search load. The eight-PBO layout itself establishes no FPS increase. See [MIGRATION.md](MIGRATION.md) for current and historical verification results and log locations.
 
 ## Build and install
 
@@ -84,4 +115,4 @@ The final 3.5.0 benchmark averaged 28.53 server FPS disabled and 28.82 enabled o
 
 For a mission with restrictive remote-execution settings, merge the supplied `REMOTE-EXEC.hpp` declarations. The addon does not replace another mod's global remote-execution policy. See [MIGRATION.md](MIGRATION.md) for mission-script installation, legacy settings and validation results.
 
-After validating the PBOs, run `./tools/package-upload.ps1` to create `build/upload/VCOM_Edited_by_Fijik-3.5.0.zip` and its SHA-256 checksum. Documentation refreshes without rebuilding or changing the tested PBOs and signatures. The eight-PBO layout provides separate files for maintenance and updates.
+After validating the PBOs, run `./tools/package-upload.ps1` to create `build/upload/VCOM_Edited_by_Fijik-3.6.0.zip` and its SHA-256 checksum. Documentation refreshes without rebuilding or changing the tested PBOs and signatures. The eight-PBO layout provides separate files for maintenance and updates.

@@ -14,6 +14,24 @@ private _buildings = (nearestObjects [_contact,["House"],25]) select {
 };
 if (_buildings isEqualTo []) exitWith {[]};
 private _building = _buildings select 0;
+private _layout = [];
+if (VCM_FULLCLEAR && {VCM_CQBSECTORS}) then {
+    _layout = _building getVariable ["VCM_CQBLayout",[]];
+    private _signature = [getPosWorld _building,vectorDir _building,vectorUp _building,damage _building];
+    if (_layout isEqualTo [] || {!((_layout select 6) isEqualTo _signature)} ||
+        {(_building getVariable ["VCM_CQBLayoutLimit",-1]) != floor VCM_CQBNODES}) then {
+        _layout = [];
+        if (scriptDone (missionNamespace getVariable ["VCM_CQBMapper",scriptNull])) then {
+            _building setVariable ["VCM_CQBMapping",true];
+            VCM_CQBMapper = [_building] spawn {
+                params ["_building"];
+                [_building] call VCM_fnc_CQBLayout;
+                if (!isNull _building) then {_building setVariable ["VCM_CQBMapping",false]};
+            };
+        };
+    };
+};
+if (VCM_FULLCLEAR && {VCM_CQBSECTORS} && {_layout isEqualTo [] || {(_layout select 3) isEqualTo []}}) exitWith {[]};
 private _units = ([_group] call VCM_fnc_TacticalUnits) select {!(_x getUnitTrait "Medic")};
 if (count _units < 4) exitWith {[]};
 _units = [_units,[],{private _type = [primaryWeapon _x] call BIS_fnc_itemType; [1,0] select ((_type param [1,""]) == "MachineGun")},"ASCEND"] call BIS_fnc_sortBy;
@@ -26,13 +44,28 @@ for "_index" from 0 to 7 do {
 };
 _exits = [_exits,[],{_x distance2D leader _group},"ASCEND"] call BIS_fnc_sortBy;
 private _entrance = _exits param [0,_building getPos [8,_building getDir leader _group]];
+if (_layout isNotEqualTo []) then {
+    private _doors = _layout select 4;
+    private _verified = (_layout select 0) select {
+        private _point = _x select 0;
+        !(_x select 1) && {_doors findIf {
+            private _door = _x select 2;
+            _door distance2D _point < 2 && {(ATLToASL _door select 2) - (ATLToASL _point select 2) > 0.4} &&
+                {(ATLToASL _door select 2) - (ATLToASL _point select 2) < 1.9}
+        } >= 0}
+    };
+    _verified = [_verified,[],{leader _group distance (_x select 0)},"ASCEND"] call BIS_fnc_sortBy;
+    if (_verified isNotEqualTo []) then {_entrance = _verified select 0 select 0};
+};
 private _outward = _building getDir _entrance;
 private _bounds = boundingBoxReal _building;
 private _extent = (vectorMagnitude (_bounds select 0)) max (vectorMagnitude (_bounds select 1));
 private _stage = _building getPos [_extent + 4,_outward];
+if (VCM_FULLCLEAR && {VCM_CQBSECTORS}) then {_stage = _entrance getPos [3,_outward]};
 private _stages = [];
 {
-    private _position = (_stage getPos [2 + 6 * _forEachIndex,_outward + 90]) findEmptyPosition [0,2,typeOf _x];
+    private _candidate = if (VCM_FULLCLEAR && {VCM_CQBSECTORS}) then {_stage getPos [1.5 * _forEachIndex,_outward]} else {_stage getPos [2 + 6 * _forEachIndex,_outward + 90]};
+    private _position = _candidate findEmptyPosition [0,2,typeOf _x];
     _stages pushBack _position;
 } forEach _entryTeam;
 if (_stages findIf {_x isEqualTo [] || {surfaceIsWater _x}} >= 0) exitWith {[]};
@@ -48,7 +81,7 @@ private _phases = [
     [_support,_entryTeam,_stages,20,_entrance],
     [_support,_entryTeam,_destinations,VCM_CQBSECONDS,_entrance]
 ];
-if (VCM_CQBSECTORS) then {
+if (VCM_CQBSECTORS && {!VCM_FULLCLEAR}) then {
     private _route = [(_building buildingPos -1),[],{_x distance _entrance},"ASCEND"] call BIS_fnc_sortBy;
     private _unique = [];
     {private _point = _x; if (_unique findIf {_x distance _point < 2} < 0) then {_unique pushBack _point}} forEach _route;
@@ -67,5 +100,9 @@ if (VCM_CQBSECTORS) then {
     };
     _group setVariable ["VCM_ClearRoute",_unique,true];
 };
+if (VCM_FULLCLEAR && {VCM_CQBSECTORS}) then {
+    _phases = [_phases select 0,[_support + _entryTeam,[],[],0,_entrance,["clearRooms",_building,_entryTeam,_layout,_contact]]];
+    (_phases select 0) set [3,VCM_CQBSECONDS];
+};
 if (_phases isEqualTo []) exitWith {[]};
-[_building,_support,_entryTeam,_entrance,_phases,_contact]
+[_building,_support,_entryTeam,_entrance,_phases,_contact,_layout]

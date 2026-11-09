@@ -9,8 +9,12 @@
     ["VCM_SMOKECOVER","CHECKBOX","Smoke cover for retreat and rescue",true,0,1,0,true],
     ["VCM_SMOKECOOLDOWN","SLIDER","Smoke-cover cooldown (seconds)",45,10,180,0,true],
     ["VCM_CQBSECTORS","CHECKBOX","Queued building entry and room progression",true,0,1,0,true],
-    ["VCM_CQBROOMS","SLIDER","Maximum building positions to clear",8,2,16,0,true],
+    ["VCM_FULLCLEAR","CHECKBOX","Search all mapped rooms and floors",true,0,1,0,true],
+    ["VCM_CQBROOMS","SLIDER","Maximum rooms per search (reports partial at limit)",32,2,96,0,true],
     ["VCM_CQBSECONDS","SLIDER","Building movement phase deadline (seconds)",35,10,90,0,true],
+    ["VCM_CQBTIME","SLIDER","Total room-search deadline (seconds)",300,60,900,0,true],
+    ["VCM_CQBSCAN","SLIDER","Room observation time (seconds)",2,1,6,1,true],
+    ["VCM_CQBNODES","SLIDER","Maximum cached building search points",256,64,384,0,true],
     ["VCM_ATCOORD","CHECKBOX","Coordinate anti-tank firing",true,0,1,0,true],
     ["VCM_ATRANGE","SLIDER","Maximum coordinated anti-tank range (meters)",500,100,1000,0,true],
     ["VCM_ATLEASE","SLIDER","Anti-tank target reservation (seconds)",20,5,60,0,true],
@@ -37,6 +41,8 @@
     ["VCM_DEBUGINTERVAL","SLIDER","Debug telemetry interval (seconds)",2,0.5,5,1,true],
     ["VCM_DEBUGHISTORY","SLIDER","Debug history records per group",30,5,100,0,true],
     ["VCM_DEBUGOVERLAY","CHECKBOX","Debugger: show local 3D overlay",false,0,1,0,false],
+    ["VCM_DEBUGPLANS","CHECKBOX","Debugger: show intended goals and CQB routes",true,0,1,0,false],
+    ["VCM_DEBUGROOMS","CHECKBOX","Debugger: show room coverage and door state",true,0,1,0,false],
     ["VCM_DEBUGDISTANCE","SLIDER","Debugger: draw distance (meters)",500,50,2000,0,false],
     ["VCM_DEBUGUNITS","SLIDER","Debugger: maximum visible unit labels",48,8,128,0,false]
 ]
