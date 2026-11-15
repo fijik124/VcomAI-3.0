@@ -82,7 +82,7 @@ minor = ${minor}
 patch = ${patch}
 git_hash = 0
 [files]
-include = ["README.md", "MIGRATION.md", "ROADMAP.md", "FEATURES.md", "COMMANDS.md", "REMOTE-EXEC.hpp", "ADDON-MODULES.json", "userconfig/**"]
+include = ["README.md", "MIGRATION.md", "ROADMAP.md", "FEATURES.md", "COMMANDS.md", "TEST_RESULTS.md", "IN_GAME_CHECKLIST.md", "REMOTE-EXEC.hpp", "ADDON-MODULES.json", "userconfig/**"]
 `);
 fs.writeFileSync(path.join(stage,'mod.cpp'),`name="${project.name} ${project.version}"; author="${project.author}"; tooltip="${project.name}"; description="Modular VCOM AI edited by Fijik; original VCOM by Genesis";\n`);
 fs.writeFileSync(path.join(stage,'README.md'),`# ${project.name} ${project.version}
@@ -97,11 +97,13 @@ Copy the supplied public .bikey into the server's keys folder when signature ver
 
 Configure VCOM through CBA Addon Options. Optional userconfig startup defaults go into the Arma root's userconfig/VCOM_AI folder and require server file patching; saved CBA settings take priority. The old CBA bypass switch and vanilla treatment/hit-reaction functions have been removed. Mission-script installation also requires CBA_A3 and ACE Medical.
 
+User-reported completed in-game checks are recorded in [TEST_RESULTS.md](TEST_RESULTS.md). Only waiting checks remain in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md), with true/false status and space for notes.
+
 Splitting PBOs organizes maintenance and updates; it does not itself increase FPS. FEATURES.md and MIGRATION.md describe behavior and verification. Original VCOM: Genesis. This edition: Fijik.
 `);
 fs.writeFileSync(path.join(stage,'ADDON-MODULES.json'),JSON.stringify(project,null,2) + '\n');
 fs.cpSync(path.join(root,'userconfig'),path.join(stage,'userconfig'),{recursive:true});
-for (const name of ['MIGRATION.md','ROADMAP.md','FEATURES.md','COMMANDS.md']) fs.copyFileSync(path.join(root,name),path.join(stage,name));
+for (const name of ['MIGRATION.md','ROADMAP.md','FEATURES.md','COMMANDS.md','TEST_RESULTS.md','IN_GAME_CHECKLIST.md']) fs.copyFileSync(path.join(root,name),path.join(stage,name));
 const result = spawnSync('hemtt',['release','--no-bin','--no-color'],{cwd:stage,encoding:'utf8'});
 const output = (result.stdout || '') + (result.stderr || '');
 fs.writeFileSync(path.join(root,'build/release.log'),output);

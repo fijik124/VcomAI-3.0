@@ -10,7 +10,7 @@
 - Bounded, expiring danger memory influencing outdoor destination scoring.
 - Eight optional Zeus modules for objective/fallback/danger overrides, point restart/removal, local danger reset and return to autonomous decisions. Curator-only local markers and server-validated requests.
 
-Detailed controls and reset semantics are in [COMMANDS.md](COMMANDS.md). Remaining acceptance includes graphical Zeus selection/markers, more buildings/terrains, modded equipment, remote player clients and long-mission performance.
+Detailed controls and reset semantics are in [COMMANDS.md](COMMANDS.md). The completed in-game cases are recorded below and in [TEST_RESULTS.md](TEST_RESULTS.md). Remaining acceptance includes Zeus objective modules/markers, building searches, night equipment, medical interactions and the other unchecked cases in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md).
 
 ## Required CBA/ACE stack in 3.7.0
 
@@ -18,7 +18,7 @@ Detailed controls and reset semantics are in [COMMANDS.md](COMMANDS.md). Remaini
 - Always register CBA settings; remove optional-CBA detection and the CBA bypass switch.
 - Remove unused vanilla treatment, stance reactions, medic scans and related settings. Retain ACE casualty evacuation as an opt-in behavior.
 - Run normal native tests with the required stack, plus negative mission-script startup checks with dependencies absent.
-- Recheck the remaining graphical, remote-client and long-mission acceptance scenarios below with CBA/ACE loaded.
+- Follow the current remaining acceptance list below with CBA/ACE loaded; completed multiplayer/endurance cases are recorded in [TEST_RESULTS.md](TEST_RESULTS.md).
 
 ## AI decision debugger in 3.6.0
 
@@ -81,11 +81,25 @@ See [FEATURES.md](FEATURES.md) for settings, thresholds, installation and practi
 - Frame-local contact reuse, timed safety scans, cached throwable classification, bounded path replans and cheap empty-registry checks. A reproducible VCOM-off/on performance runner records 128-unit combat measurements.
 - Signed PBO and upload-folder generation through the `hemtt` command.
 
+## Completed in-game acceptance
+
+The user marked **10 of 24 checks as done**. Their original `true` rows are archived in [TEST_RESULTS.md](TEST_RESULTS.md), with no additional environment details or benchmark numbers supplied.
+
+- [x] CBA categories, ordering and saved-setting persistence (01).
+- [x] Debugger activation, gameplay panel, squad inspection, Zeus camera and display transitions (02–06).
+- [x] Infantry and direct-fire vehicle firing safety (17).
+- [x] Vehicles and convoys, including spacing, pedestrians, dismounting, crew retention and obstacle recovery (21).
+- [x] Task cancellation by new orders and direct player control (23).
+- [x] Multiplayer joining, applicable HC transfers and 30-minute endurance/performance acceptance as described in check 24.
+
 ## Remaining acceptance checks
 
-- Visual review of the debugger labels, routes, room/door markers and panel on a graphical player client.
-- Complete traversal of more terrain and modded buildings, especially large barracks and unusual floor/door models.
-- Graphical player clients joining from another computer with required CBA/ACE loaded.
-- Zeus spawning, leader changes and direct player control.
-- Mission-specific medical, rearming, transport and artillery cases.
-- At least 30 minutes of large-battle performance measurement against a matching baseline.
+- [ ] Debugger coexistence with other HUDs, missing-data messages and disable cleanup (07–09).
+- [ ] Fire and movement, counter-flanking, reconnaissance, defense and withdrawal (10–13).
+- [ ] Zeus objective/reset modules and tactical marker readability (14).
+- [ ] Building traversal, room/door visuals and locked-room handling, including more terrains and modded models (15–16).
+- [ ] Grenade handling, smoke/anti-tank behavior and night equipment (18–20).
+- [ ] ACE casualty evacuation and treatment interaction (22).
+- [ ] Additional mission-specific rearming, artillery, modded equipment/seat variants, Zeus spawning/removal and leader changes beyond the completed checklist cases.
+
+The 14 pending checklist rows retain their original IDs and `false` values in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md). Completion applies to the user's tested setup; other configurations are not automatically certified.

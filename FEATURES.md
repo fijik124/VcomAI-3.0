@@ -2,6 +2,8 @@
 
 This update targets Arma 3 2.22 or newer and requires CBA_A3 and ACE including ACE Medical on every machine. Existing casualty evacuation, rearming, static weapons, mines, formation, vehicle use and artillery functions remain available.
 
+**In-game testing: 10 of 24 user checks are done.** CBA groups and persistence (01), debugger activation and gameplay/Zeus inspection/display transitions (02–06), firing safety (17), vehicles/convoys (21), cancellation/player control (23), and multiplayer/endurance (24) are user-reported complete. See [TEST_RESULTS.md](TEST_RESULTS.md) for the archived `true` results and [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md) for the 14 remaining `false` checks. Other HUD compatibility, room/door visuals and the other unmarked behaviors remain waiting.
+
 ## Tactical orders and doctrine in 3.8.0
 
 Six additional systems are implemented: counter-flanking against remembered lateral contacts; recon posts and position-only radio reports; night flashlight/IR/hand-flare discipline; spaced defenses and fallback points; default/recon/assault/defend/convoy doctrine; and bounded memory of observed fire, casualties and failed outdoor movement.

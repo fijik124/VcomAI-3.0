@@ -81,6 +81,12 @@ Use `group call VCM_fnc_SquadExc` to register a group manually. Do not start the
 
 ## Validation
 
+### User-reported in-game acceptance
+
+**10 of 24 manual checks are done (`true`)**: addon settings (01), debugger activation/gameplay panel/squad inspection/Zeus camera/display transitions (02–06), firing safety (17), vehicles/convoys (21), cancellation/player control (23), and multiplayer/endurance (24). These results come from the user's edited checklist; they do not add to the automated assertion counts below. Session metadata, machine topology, logs and numerical performance measurements were not supplied.
+
+The completed rows are archived in [TEST_RESULTS.md](TEST_RESULTS.md) and removed from the active [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md). The remaining 14 rows keep their original IDs and `false` values. Other HUD compatibility, missing-data/disable behavior, tactical maneuvers, Zeus objective modules, building/locked-room handling, grenades, smoke/anti-tank, night equipment and ACE evacuation still await manual completion.
+
 Node.js and HEMTT are needed for static validation:
 
 ```powershell
@@ -141,13 +147,13 @@ Static validation compiles 292 SQF files, including 106 extracted FSM clauses, w
 | Full signed-addon regression with CBA/ACE | 193 checks, zero failures | `build/runtime/profiles-20261115-145535` |
 | Full server/two-HC regression after request-permission correction | 165 checks, zero failures | `build/multiplayer/run-20261115-145008` |
 
-These 455 passing checks use the same signed PBO set before the CBA menu update described below. The doctrine suite requires AI-selected recon and defense without Zeus setup, native travel to assigned positions, cancellation by authored routes, remembered-contact reports, return-fire policy cleanup, real equipped flashlight/IR-laser behavior and a native hand-flare projectile consuming carried ammunition. Earlier development runs exposed movement and night-equipment fixture failures. Multiplayer validation also caught two request gates that incorrectly relied on `isRemoteExecuted`, which is false for native HC-origin traffic with sender zero. Remote commander requests now require an authenticated curator, while server scripts use the non-whitelisted `VCM_fnc_CommanderOrder`. Remote reports validate their source owner independently of that flag; server-local distribution uses the non-whitelisted `VCM_fnc_ReconPublish`. Null identities cannot select the trusted server path. Graphical Zeus selection, marker/module placement, remote player clients, more terrain/modded buildings and sustained mission performance remain acceptance work.
+These 455 passing checks use the same signed PBO set before the CBA menu update described below. The doctrine suite requires AI-selected recon and defense without Zeus setup, native travel to assigned positions, cancellation by authored routes, remembered-contact reports, return-fire policy cleanup, real equipped flashlight/IR-laser behavior and a native hand-flare projectile consuming carried ammunition. Earlier development runs exposed movement and night-equipment fixture failures. Multiplayer validation also caught two request gates that incorrectly relied on `isRemoteExecuted`, which is false for native HC-origin traffic with sender zero. Remote commander requests now require an authenticated curator, while server scripts use the non-whitelisted `VCM_fnc_CommanderOrder`. Remote reports validate their source owner independently of that flag; server-local distribution uses the non-whitelisted `VCM_fnc_ReconPublish`. Null identities cannot select the trusted server path. The later user-reported debugger inspection/Zeus camera, multiplayer and endurance cases are now complete as recorded in TEST_RESULTS.md. Zeus objective modules/markers, more building models, other HUD compatibility, medical interactions and the other unchecked cases remain waiting.
 
 ### Grouped CBA settings in 3.8.0, November 15, 2026
 
 All 104 Addon Options settings now use 18 numbered, collapsible subcategories under the existing VCOM entry. The master activation switch comes first; each group places switches before value controls and sorts each set alphabetically. Setting IDs, defaults, limits, local/global scope and the legacy full-speed callback are retained. Only `vcm_core.pbo` changes; the other seven PBO hashes match the tactical acceptance build above. Static compilation still reports zero errors and 395 advisory warnings.
 
-The rebuilt signed addon passes the existing expanded suite: 107 checks, zero failures, in `build/runtime/profiles-20261115-153332`. This includes CBA registration, settings types/defaults, synchronized snapshots, grenade safeguards, convoy controls, coordination and physical casualty evacuation. Earlier grouped-menu runs intermittently returned no cover plan in the casualty fixture; the previous core passed the same suite, and the final grouped core passed with extra diagnostic logging. No evacuation implementation or fixture assertions changed. The passing run still requires real casualty travel, improved cover and attachment cleanup. Graphical menu layout remains a player-client visual acceptance check.
+The rebuilt signed addon passes the existing expanded suite: 107 checks, zero failures, in `build/runtime/profiles-20261115-153332`. This includes CBA registration, settings types/defaults, synchronized snapshots, grenade safeguards, convoy controls, coordination and physical casualty evacuation. Earlier grouped-menu runs intermittently returned no cover plan in the casualty fixture; the previous core passed the same suite, and the final grouped core passed with extra diagnostic logging. No evacuation implementation or fixture assertions changed. The passing run still requires real casualty travel, improved cover and attachment cleanup. The user subsequently marked the grouped-menu layout and persistence check 01 as done; see TEST_RESULTS.md.
 
 ### Debugger visibility in 3.8.0, November 15, 2026
 
@@ -173,7 +179,7 @@ Static validation compiles 267 SQF files, including 106 extracted FSM clauses, w
 
 The normal addon assertions verify every required patch is loaded and explicitly listed by the core PBO. The negative fixtures verify startup exits without creating partial runtime state. Regression checks confirm the deleted treatment/hit-reaction functions are absent. Expanded checks verify the obsolete ACE evacuation switch is unregistered, the single evacuation switch defaults off, and enabled evacuation physically moves a casualty toward cover without healing or waking it. Multiplayer checks cover live settings, both joining HCs, cross-owner support, casualty and building-search handoffs, and recovery after disconnect. All eight PBO signatures verify against the supplied `vcm_3.7.0.bikey` public key.
 
-Historical performance and building-search results below describe earlier builds. The remaining graphical, remote-player and long-mission acceptance scenarios still apply to the required CBA/ACE stack.
+Historical performance and building-search results below describe earlier builds. Current user-reported completion is recorded in TEST_RESULTS.md; debugger/HUD coexistence, building/room visuals, medical interactions and the other false checklist rows remain waiting.
 
 ### Historical room-search verification in 3.6.0
 
@@ -207,7 +213,7 @@ The final handoff regression caught a reporting race: group and unit locality ca
 
 The final 128-unit vanilla benchmark uses a 15-second warmup and approximately 61 seconds per variant. Disabled averaged 28.62 server FPS (10th percentile 28.22, maximum five SQF scripts). Enabled averaged 28.81 FPS (10th percentile 28.52, maximum 47 scripts, 16 controllers). Both variants passed uniqueness, shutdown and restoration of all recorded native AI flags. Raw results are in `build/performance.csv`. This short VR scenario does not establish a speedup, measure sustained building-search load or replace long mission-specific testing. Mapping is separately bounded to one automatic job and 16 retained building layouts per owner, with configurable node/time limits; debugger sampling stops when disabled.
 
-The intent debugger reports recorded VCOM decisions, current owner-side native command state and remembered contact positions. It cannot expose the engine's private reasoning or full native path. Dedicated-server tests cover snapshot bounds, disabled collection, actual CQB route publication and room/door telemetry. The graphical overlay still requires visual acceptance on a player client. CQB geometry checks include small houses, two-floor houses and barracks; this does not establish complete traversal of every barracks or modded model.
+The intent debugger reports recorded VCOM decisions, current owner-side native command state and remembered contact positions. It cannot expose the engine's private reasoning or full native path. Dedicated-server tests cover snapshot bounds, disabled collection, actual CQB route publication and room/door telemetry. Graphical acceptance was pending for that historical build. Current gameplay panel, squad inspection, Zeus camera and display-transition checks are user-reported done; room/door/route visuals remain pending under the building-search checks. CQB geometry checks include small houses, two-floor houses and barracks; this does not establish complete traversal of every barracks or modded model.
 
 ### Modular 3.5.0 verification, November 8, 2026
 
@@ -231,7 +237,7 @@ These addon missions load the complete PBO set without embedded VCOM source. New
 
 Development checks caught and corrected smoke classification/command issues, premature addon CBA registration, and an invalid assumption that a headless client could query another group's owner directly. CBA registration now runs after CBA initializes its settings system, before VCOM starts. Receivers validate server-issued peer leases. The suppression fixture isolates smoke because lingering smoke correctly blocks its visibility check; the separate smoke test still requires a real native projectile and ammunition consumption. The outdoor grenade fixture waits for loaded native ammunition before firing; evacuation waits for actual contact and actor readiness. Successful runs have no SQF expression errors.
 
-The debugger's telemetry, limits and event collection have native coverage. Its graphical Draw3D labels, destination lines and panel still require visual acceptance on a player client. Native `buildingPos` progression does not prove semantic room clearing, and the short convoy checks do not replace a long route test. ACE casualty evacuation remains explicit opt-in and needs mission-specific medical interaction acceptance. No FPS guarantee is made.
+The debugger's telemetry, limits and event collection have native coverage. Graphical acceptance was pending for that historical build. Current basic panel/inspection/display checks are user-reported done; CQB destination/room visuals and other HUD compatibility remain in the pending checklist. Native `buildingPos` progression does not prove semantic room clearing, and the short convoy checks do not replace a long route test. ACE casualty evacuation remains explicit opt-in and needs mission-specific medical interaction acceptance. No FPS guarantee is made.
 
 ### Modular 3.4.1 verification, November 8, 2026
 
@@ -268,18 +274,24 @@ The 128-unit VR benchmark used a 15-second warmup followed by approximately 61 s
 | Disabled | 28.53 | 28.22 | 5 | 0 |
 | Enabled | 28.82 | 28.57 | 36 | 16 |
 
-Both variants passed all three cleanup assertions: no duplicate controllers, no active controllers after shutdown, and restoration of all six recorded native AI features for every unit. There were no SQF expression errors. Logs are in `build/runtime/profiles-20261108-124630` and `build/runtime/profiles-20261108-124800`; historical raw results are in `build/performance-3.4.0.csv`. FPS remained similar in this short scenario. Different tactics change the native simulation workload; longer missions and other maps still need measurement.
+Both variants passed all three cleanup assertions: no duplicate controllers, no active controllers after shutdown, and restoration of all six recorded native AI features for every unit. There were no SQF expression errors. Logs are in `build/runtime/profiles-20261108-124630` and `build/runtime/profiles-20261108-124800`; historical raw results are in `build/performance-3.4.0.csv`. FPS remained similar in this short historical scenario. Different tactics change the native simulation workload. The user has since marked 30-minute endurance/performance acceptance complete for the tested setup (check 24); other maps and configurations require their own measurements.
 
-## Multiplayer acceptance scenarios
+## Multiplayer acceptance status
 
-The automated suite covers local headless clients. These broader acceptance checks remain:
+The automated suite covers local headless clients. The user has also completed the following manual cases in the tested setup; original `true` results are retained in [TEST_RESULTS.md](TEST_RESULTS.md):
 
-1. Join a running mission with a graphical player client on another computer, with required CBA/ACE loaded. Check that side arrays, skill arrays and activation state match the server. Change a server setting and verify it reaches the joining client.
-2. Repeat ownership handoffs on a networked server with mission-specific rearming, transport and support tasks. The local suite covers garrisoning, movement, static deployment and coordinated movement; it does not exercise every task or network condition.
-3. Add and remove soldiers with Zeus; change group leader; take direct player control. Check that handlers do not accumulate and authored waypoints survive.
-4. Test ACE treatment and VCOM evacuation with wounded soldiers, insufficient supplies, incapacitation and unreachable patients. ACE must retain control of wounds and unconsciousness.
-5. Exercise transport seats, turrets and new helicopter variants. The existing transport detector still distinguishes cargo seats; this update does not implement a dedicated aircraft tactical controller.
-6. Test artillery with allies and civilians near the target, moving friendlies, translated UI and modded magazines. The friendly check is a snapshot at firing time; it cannot guarantee safety if units move into the impact area afterward.
-7. Run a large mission for at least 30 minutes. Compare server frame times, scheduled-script load, stuck units and RPT errors against the previous version with the same scenario.
+- [x] Join-in-progress, applicable HC ownership transfers and multiplayer endurance as described in check 24. The exact network/machine topology was not recorded.
+- [x] A 30-minute battle, performance comparison with debugging off and RPT inspection as described in check 24. No numerical benchmark results were supplied.
+- [x] Vehicle/convoy spacing, pedestrian halts, dismounting, crew retention and obstacle recovery (21).
+- [x] New mission orders and direct player control cancel temporary VCOM tasks without freezing units or deleting authored routes (23).
 
-The server coordinates reinforcement, artillery, squad-role, anti-tank and vehicle/infantry requests across AI owners. Only server-selected fixed data is dispatched; receivers control their own local units. Remote peer owners are taken from server-issued leases because `groupOwner` can report zero for a remote group on a headless client. Include all new behaviors in the remaining player-client and long-mission acceptance scenarios before adopting them for a campaign.
+These additional or still-unmarked cases remain:
+
+- [ ] Mission-specific ownership handoffs during rearming, artillery, resupply and other integrations beyond the completed basic HC-transfer check.
+- [ ] Zeus spawning/removal and leader changes; direct player control is already completed under check 23.
+- [ ] ACE treatment/evacuation with wounded soldiers, insufficient supplies, incapacitation and unreachable patients (22). ACE must retain medical control.
+- [ ] Modded cargo/turret seats and new helicopter transport variants beyond the completed ground-vehicle check. Dedicated aircraft tactics are not implemented.
+- [ ] Artillery with moving friendlies/civilians, translated UI and modded magazines. Its friendly-area check is a snapshot at firing time.
+- [ ] The other 14 false rows in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md), including Zeus objective modules and tactical/room-search behaviors.
+
+The server coordinates reinforcement, artillery, squad-role, anti-tank and vehicle/infantry requests across AI owners. Only server-selected fixed data is dispatched; receivers control their own local units. Remote peer owners are taken from server-issued leases because `groupOwner` can report zero for a remote group on a headless client. Completed manual acceptance applies to the user's tested setup, and the remaining cases above remain separate from those results.

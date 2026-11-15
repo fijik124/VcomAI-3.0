@@ -15,8 +15,15 @@ foreach ($module in $project.modules) {
     if (-not (Get-ChildItem -LiteralPath (Join-Path $mod 'addons') -Filter ($pboName + '.*.bisign'))) { throw ('Missing signature: ' + $pboName) }
 }
 # Refresh documentation without rebuilding or changing the validated PBO and its signature.
-foreach ($name in @('MIGRATION.md','ROADMAP.md','FEATURES.md','COMMANDS.md')) {
+foreach ($name in @('MIGRATION.md','ROADMAP.md','FEATURES.md','COMMANDS.md','TEST_RESULTS.md','IN_GAME_CHECKLIST.md')) {
     Copy-Item -LiteralPath (Join-Path $repository $name) -Destination (Join-Path $mod $name) -Force
+}
+# Older validated builds have a generated installation README without test-status links.
+$readmePath = Join-Path $mod 'README.md'
+$readme = [System.IO.File]::ReadAllText($readmePath)
+if (-not $readme.Contains('[TEST_RESULTS.md](TEST_RESULTS.md)')) {
+    $readme += [Environment]::NewLine + 'User-reported completed in-game checks are recorded in [TEST_RESULTS.md](TEST_RESULTS.md). Only waiting checks remain in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md), with true/false status and space for notes.' + [Environment]::NewLine
+    [System.IO.File]::WriteAllText($readmePath,$readme,(New-Object System.Text.UTF8Encoding($false)))
 }
 $files = @(Get-ChildItem -LiteralPath $mod -Recurse -File -Force | Where-Object { $_.Name -ne 'BUILD-MANIFEST.json' })
 if ($files | Where-Object Extension -EQ '.biprivatekey') { throw 'Private signing key must never be uploaded.' }

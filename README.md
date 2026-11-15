@@ -23,6 +23,8 @@ Configure VCOM through CBA Addon Options. The non-CBA switch, vanilla treatment 
 
 Version 3.8.0 adds autonomous counter-flanking, recon observation/reporting, night discipline, defensive positions, doctrine selection and bounded danger memory. AI chooses its own behavior. Eight optional Zeus modules provide specific objectives, fallback/danger overrides and resets; five Eden-only presets support mission authors. Authorized curators see local point/danger markers. See [COMMANDS.md](COMMANDS.md) for automatic decisions, optional overrides, reset controls and limits.
 
+User-reported in-game testing is **done for 10 of 24 checks**: CBA grouping, debugger activation/panel/inspection/Zeus camera/display transitions, firing safety, vehicles/convoys, cancellation/player control, and multiplayer/endurance. Completed checks retain `true` in [TEST_RESULTS.md](TEST_RESULTS.md); the 14 waiting checks remain `false` in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md).
+
 Build and package with Node.js, PowerShell and the `hemtt` command on PATH:
 
 ```powershell
@@ -37,7 +39,7 @@ node tools/build-release.mjs
 ./tools/package-upload.ps1
 ```
 
-Version 3.6.0 adds full mapped room search with geometry sampling, floor and door routes, doorway stacking, observed coverage and partial-search reports. Native indoor movement retains its mission-enabled FSM. The debugger displays chosen actions and reasons, native commands, intended destinations, planned CQB routes, room coverage and live door states. CBA exposes search limits and observation timing alongside existing controls. To inspect AI, enable the server's **Enable debugger telemetry and event log** setting, then the player's **Debugger: show local 3D overlay** setting under **VCOM Edited by Fijik**. Both default off.
+Version 3.6.0 adds full mapped room search with geometry sampling, floor and door routes, doorway stacking, observed coverage and partial-search reports. Native indoor movement retains its mission-enabled FSM. The debugger displays chosen actions and reasons, native commands, intended destinations, planned CQB routes, room coverage and live door states. CBA exposes search limits and observation timing alongside existing controls. To inspect AI, enable the server's **Enable AI debugger and telemetry** setting and the player's **Debugger: show panel and 3D overlay** setting under **VCOM Edited by Fijik > 18 Debugger and Telemetry**. Server debugging defaults off; the local view defaults on, while existing saved false values remain off.
 
 Native test runners find the installed Steam Workshop CBA/ACE folders automatically, or accept explicit paths through `-Mods`. The `dependencies` suite deliberately omits automatic mod loading to check failed startup.
 
