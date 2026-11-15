@@ -44,6 +44,7 @@ class VCOM
 		class DebugState {};
 		class DebugPublish {};
 		class DebugUI {};
+		class DebugPanel {};
 		class PlanBudget {};
 		class RecoveryPosition {};
 		class ReturnMagazines {};

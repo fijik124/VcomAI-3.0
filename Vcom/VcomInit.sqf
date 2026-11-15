@@ -6,6 +6,22 @@ VCM_Started = true;
 waitUntil {sleep 0.05; missionNamespace getVariable ["cba_settings_ready",false]};
 [] call VCM_fnc_CBASettings;
 if (isServer) then {VCM_ServerReady = true; [] spawn VCM_fnc_IRCHECK};
+if (hasInterface) then {
+    // Keep the local panel and human-state cleanup alive while a client awaits server settings.
+    [] spawn {
+        while {true} do {
+            {
+                if (!isNull _x && {local _x}) then {
+                    [_x] call VCM_fnc_ReleaseUnitState;
+                    if (_x == leader group _x) then {[group _x] call VCM_fnc_AttackControl};
+                };
+            } forEach ([player,remoteControlled player] arrayIntersect [player,remoteControlled player]);
+            [] call VCM_fnc_DebugUI;
+            [] call VCM_fnc_CuratorUI;
+            sleep 0.5;
+        };
+    };
+};
 if (!isServer) then {
     private _nextRequest = -1;
     waitUntil {
@@ -35,21 +51,6 @@ if (isServer) then {
 // A fixed update rate prevents frame rate from multiplying mine scans.
 [] spawn {while {true} do {[] call VCM_fnc_MineMonitor; sleep 1}};
 if (hasInterface) then {
-    // A newly occupied or Zeus-controlled unit may carry state from another owner.
-    // Check only the two local human-controlled objects, including when no AI controller starts.
-    [] spawn {
-        while {true} do {
-            {
-                if (!isNull _x && {local _x}) then {
-                    [_x] call VCM_fnc_ReleaseUnitState;
-                    if (_x == leader group _x) then {[group _x] call VCM_fnc_AttackControl};
-                };
-            } forEach ([player,remoteControlled player] arrayIntersect [player,remoteControlled player]);
-            [] call VCM_fnc_DebugUI;
-            [] call VCM_fnc_CuratorUI;
-            sleep 0.5;
-        };
-    };
     [] spawn {
         waitUntil {sleep 0.1; !isNull player};
         player addEventHandler ["Fired", {_this call VCM_fnc_HearingAids}];

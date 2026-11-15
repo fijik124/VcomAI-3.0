@@ -43,11 +43,15 @@ Existing saved `VCM_CQBROOMS` values remain in effect. A saved value of eight no
 
 Open **Options > Addon Options > VCOM Edited by Fijik**. Feature flags and numeric controls are server/mission settings. Each feature can be disabled independently. Sliders cover recovery delays/retries/radius, grenade clearance, smoke cooldown, room count/deadline, anti-tank range/reservation, coordination radius/cooldown, planning budget/intervals, casualty distances, convoy gap/speed and retreat thresholds/deadlines. Exact defaults and limits are maintained in [fn_FeatureSettings.sqf](Vcom/Functions/VCM_Functions/fn_FeatureSettings.sqf). Saved CBA values take priority through CBA's normal server/mission setting rules. The supplied userconfig can seed startup defaults with server file patching enabled.
 
+All 104 settings appear in 18 numbered, collapsible groups: General; Doctrine and Command Points; Movement and Cover; Counter-Flanking; Reconnaissance; Night Combat; Defense and Withdrawal; Building Clearing; Fire and Grenade Safety; Tactical Danger Memory; Smoke Cover; Squad Coordination and Reinforcements; Anti-Tank and Artillery; Vehicles and Convoys; Equipment and Resupply; Casualty Evacuation; Performance; and Debugger and Telemetry. The master activation switch appears first. Each group lists switches before sliders and lists, sorting each set alphabetically by its displayed name. Existing setting IDs and saved values remain supported, including the legacy `VCM_ForceSpeed` setting name.
+
 To enable the debugger:
 
-1. Enable **Enable debugger telemetry and event log** (`VCM_Debug`) in the server/mission CBA settings.
-2. On each player who needs the view, enable **Debugger: show local 3D overlay** (`VCM_DEBUGOVERLAY`). This preference is local.
-3. Point at an AI group to inspect it; otherwise the nearest group with recent telemetry is selected.
+1. Open **18 Debugger and Telemetry** and enable **Enable AI debugger and telemetry** (`VCM_Debug`) in the server/mission CBA settings.
+2. **Debugger: show panel and 3D overlay** (`VCM_DEBUGOVERLAY`) now defaults on locally. If an older saved profile has it off, enable it on each player who needs the view.
+3. Point at an AI group or select its units/group in Zeus; otherwise the nearest group with recent telemetry is selected. Distance is measured from the active camera, including Zeus and spectator cameras.
+
+The panel uses its own control on the gameplay or Zeus display, so mission hints cannot replace it. It explains waiting server settings, missing telemetry and disabled VCOM instead of leaving an empty view. Disabling server debugging or the local overlay removes the panel and drawing handler. Server debugging remains off by default, so the new local default displays nothing until debugging is enabled.
 
 Labels show group, task, role, native command, behavior and suppression. Lines show owner-reported movement destinations. The panel shows local and owner FPS, task phase, last result, measured planning time, planning interval, recent events and counters. RPT events include the owner, run token and reason for task completion/cancellation, failed movement, recovery, smoke decisions and firing vetoes. Debug history is bounded (30 records per group by default); network summaries contain only the latest five events, at two-second intervals by default. Label count and range are bounded and adjustable locally. Turning the local overlay off removes its Draw3D handler, cached labels and panel. Turning telemetry off stops collection, publication and debug RPT events. Existing bounded history remains available until the mission ends. Debugging is disabled by default.
 
@@ -55,7 +59,7 @@ Telemetry reports observed state and wall-clock planning duration, including sch
 
 ## AI intent debugger in 3.6.0
 
-Enable **Enable debugger telemetry and event log** and **Debugger: show local 3D overlay** in CBA Addon Options. Point at a soldier to select its squad; otherwise the nearest visible squad is selected. The panel shows the controller's chosen action and reason, current phase, owner, FPS, planning time, recent events and incomplete-search reasons. Unit labels show native command, behavior, suppression percentage, role and safety holds or recent route retries.
+Enable **Enable AI debugger and telemetry** and **Debugger: show panel and 3D overlay** in CBA Addon Options. Point at a soldier to select its squad; otherwise the nearest visible squad is selected. The panel shows the controller's chosen action and reason, current phase, owner, FPS, planning time, recent events and incomplete-search reasons. Unit labels show native command, behavior, suppression percentage, role and safety holds or recent route retries.
 
 Destination lines show current owner-reported movement endpoints. The selected squad adds a cyan planned CQB route, yellow intended goal and red remembered threat marker. Room markers show observed point counts: green searched, yellow active, gray pending and red blocked. Door labels distinguish open, closed and mission-locked doors. Toggle planned destinations/routes and room/door markers separately with `VCM_DEBUGPLANS` and `VCM_DEBUGROOMS`; both are local preferences under the overlay switch.
 

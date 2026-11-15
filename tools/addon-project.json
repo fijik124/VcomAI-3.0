@@ -68,6 +68,7 @@
         "DebugState",
         "DebugPublish",
         "DebugUI",
+        "DebugPanel",
         "PlanBudget",
         "RecoveryPosition",
         "ReleaseUnitState"

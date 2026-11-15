@@ -37,6 +37,7 @@ fs.copyFileSync(path.join(root, 'tests/cqb-floors.sqf'), path.join(addon, 'cqb-f
 fs.copyFileSync(path.join(root, 'tests/dependencies.sqf'), path.join(addon, 'dependencies.sqf'));
 fs.copyFileSync(path.join(root, 'tests/doctrine.sqf'), path.join(addon, 'doctrine.sqf'));
 fs.copyFileSync(path.join(root, 'tests/autonomy.sqf'), path.join(addon, 'autonomy.sqf'));
+fs.copyFileSync(path.join(root, 'tests/debug.sqf'), path.join(addon, 'debug.sqf'));
 fs.cpSync(path.join(root, 'tests/multiplayer'), path.join(addon, 'mp'), { recursive: true });
 fs.copyFileSync(path.join(root, 'userconfig/VCOM_AI/AISettingsV3.hpp'), path.join(addon, 'userconfig.sqf'));
 const [versionMajor,versionMinor,versionPatch] = project.version.split('.');

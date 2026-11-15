@@ -1,14 +1,22 @@
 /* Called by the existing human-state timer. Draw3D reads a bounded cached unit list. */
 if (!hasInterface) exitWith {};
+disableSerialization;
+VCM_DebugUIReady = true;
 private _handler = missionNamespace getVariable ["VCM_DebugDrawID",-1];
-if (!VCM_DEBUGOVERLAY) exitWith {
+if (!VCM_DEBUGOVERLAY || {!VCM_Debug}) exitWith {
     if (_handler >= 0) then {
         removeMissionEventHandler ["Draw3D",_handler];
         VCM_DebugDrawID = -1;
-        VCM_DebugVisible = [];
-        VCM_DebugLines = []; VCM_DebugMarkers = [];
-        hintSilent "";
     };
+    VCM_DebugVisible = [];
+    VCM_DebugLines = []; VCM_DebugMarkers = [];
+    private _status = if (VCM_DEBUGOVERLAY && {diag_tickTime < (missionNamespace getVariable ["VCM_DebugStatusUntil",-1])}) then {
+        "<t color='#55ccff'>VCOM AI debugger</t><br/>Enable <t color='#ffcc55'>Enable AI debugger and telemetry</t> in server/mission Addon Options, under 18 Debugger and Telemetry."
+    } else {""};
+    [_status] call VCM_fnc_DebugPanel;
+};
+if (!(missionNamespace getVariable ["VCM_SettingsReady",false])) exitWith {
+    ["<t color='#55ccff'>VCOM AI debugger</t><br/>Waiting for server settings. Check that VCOM is loaded and allowed by the mission on the server."] call VCM_fnc_DebugPanel;
 };
 if (_handler < 0) then {
     VCM_DebugDrawID = addMissionEventHandler ["Draw3D",{
@@ -27,15 +35,37 @@ if (_handler < 0) then {
         } forEach (missionNamespace getVariable ["VCM_DebugMarkers",[]]);
     }];
 };
-if (diag_tickTime < (missionNamespace getVariable ["VCM_DebugNextUI",-1])) exitWith {};
+private _display = findDisplay 312;
+if (isNull _display) then {_display = findDisplay 46};
+private _panel = uiNamespace getVariable ["VCM_DebugPanel",controlNull];
+private _displayChanged = isNull _panel || {ctrlParent _panel != _display};
+if (!_displayChanged && {diag_tickTime < (missionNamespace getVariable ["VCM_DebugNextUI",-1])}) exitWith {};
 VCM_DebugNextUI = diag_tickTime + VCM_DEBUGINTERVAL;
-if (!VCM_Debug) exitWith {VCM_DebugVisible = []; VCM_DebugLines = []; VCM_DebugMarkers = []; hintSilent "VCOM debugger: enable server telemetry and event log in Addon Options."};
-private _center = getPosATL cameraOn;
-private _groups = allGroups select {leader _x distance2D _center <= VCM_DEBUGDISTANCE && {_x getVariable ["VCM_DebugInfo",[]] isNotEqualTo []}};
+private _center = positionCameraToWorld [0,0,0];
+VCM_DebugCameraPosition = _center;
+private _groups = allGroups select {
+    alive leader _x && {leader _x distance2D _center <= VCM_DEBUGDISTANCE} &&
+    {time - ((_x getVariable ["VCM_DebugInfo",[]]) param [9,-100]) < 10}
+};
 _groups = [_groups,[],{leader _x distance2D _center},"ASCEND"] call BIS_fnc_sortBy;
 private _visible = [];
 private _selected = group cursorObject;
+if (!isNull findDisplay 312) then {
+    private _selection = curatorSelected;
+    private _selectedGroups = +(_selection param [1,[]]);
+    {_selectedGroups pushBackUnique group _x} forEach (_selection param [0,[]]);
+    private _index = _selectedGroups findIf {_x in _groups};
+    if (_index >= 0) then {_selected = _selectedGroups select _index};
+};
 if (!(_selected in _groups)) then {_selected = _groups param [0,grpNull]};
+VCM_DebugSelectedGroup = _selected;
+if (isNull _selected || {!Vcm_ActivateAI}) exitWith {
+    VCM_DebugVisible = []; VCM_DebugLines = []; VCM_DebugMarkers = [];
+    private _status = if (!Vcm_ActivateAI) then {"VCOM AI is disabled in server/mission Addon Options."} else {
+        format ["Waiting for fresh AI telemetry within %1 m of the camera.<br/>Move closer to an active VCOM squad or increase the debugger draw distance.",round VCM_DEBUGDISTANCE]
+    };
+    ["<t color='#55ccff'>VCOM AI debugger</t><br/>" + _status] call VCM_fnc_DebugPanel;
+};
 {
     private _group = _x;
     private _info = _group getVariable ["VCM_DebugInfo",[]];
@@ -60,7 +90,7 @@ if (!(_selected in _groups)) then {_selected = _groups param [0,grpNull]};
             private _color = [[0.2,0.8,1,1],[1,0.7,0.1,1]] select (_role == "move");
             _visible pushBack [_x,format ["%1 | %2 %3 | %4 %5 | pressure %6%% | %7",groupId _group,_info select 2,_role,
                 _row param [1,""],_row param [3,""],_row param [4,0],(_row param [5,[]]) joinString ", "],_destination,_color];
-        } forEach units _group;
+        } forEach ((units _group) select {alive _x && {_x distance2D _center <= VCM_DEBUGDISTANCE}});
     };
     if (count _visible >= floor VCM_DEBUGUNITS) exitWith {};
 } forEach _groups;
@@ -104,7 +134,22 @@ VCM_DebugMarkers = _markers select {(_x select 0) distance2D _center <= VCM_DEBU
 private _info = _selected getVariable ["VCM_DebugInfo",[]];
 private _cqb = _selected getVariable ["VCM_CQBProgress",[]];
 private _roomText = if (count _cqb >= 11) then {format ["<br/>Room search: %1 | room %2 | searched %3/%4 | blocked %5 | %6",_cqb select 2,1 + (_cqb select 3),count (_cqb select 5),_cqb select 4,count (_cqb select 6),_cqb select 10]} else {""};
-hintSilent parseText format ["<t color='#55ccff'>VCOM Edited by Fijik - debugger</t><br/>Local FPS: %1 | shown: %2 units<br/>Group: %3 | owner: %4 | owner FPS: %5<br/>Task: %6 phase %7<br/>Planning: %8 ms / %9 seconds<br/>Last result: %10<br/>Recent events: %11<br/>Counters: %12%13<br/>Intent: %14<br/>Why: %15<br/>Point at a squad to inspect it. Cyan: planned CQB route; yellow: goal; red: remembered threat.",
-    round diag_fps,count _visible,groupId _selected,_info param [0,-1],round (_info param [1,0]),
+private _escape = {
+    private _text = if (_this isEqualType "") then {_this} else {str _this};
+    ((toArray _text) apply {switch (_x) do {
+        case 38: {"&amp;"}; case 60: {"&lt;"}; case 62: {"&gt;"}; default {toString [_x]};
+    }}) joinString ""
+};
+private _history = _info param [7,[]];
+private _events = ((_history select [(count _history - 3) max 0,3]) apply {
+    format ["%1: %2",(_x param [1,""]) call _escape,((_x param [2,""]) select [0,80]) call _escape]
+}) joinString "<br/>";
+private _counters = ((_info param [8,[]]) select [0,6]) apply {format ["%1: %2",_x select 0,_x select 1]};
+private _last = _info param [4,[]];
+private _result = if (_last isEqualTo []) then {"none"} else {format ["%1: %2",_last param [0,""],_last param [1,""]]};
+private _text = format ["<t color='#55ccff'>VCOM Edited by Fijik - debugger</t><br/>Local FPS: %1 | shown: %2 units<br/>Group: %3 | owner: %4 | owner FPS: %5<br/>Task: %6 phase %7<br/>Planning: %8 ms / %9 seconds<br/>Last result: %10<br/>Recent events:<br/>%11<br/>Counters: %12%13<br/>Intent: %14<br/>Why: %15<br/>Point at a squad or select it in Zeus. Cyan: planned CQB route; yellow: goal; red: remembered threat.",
+    round diag_fps,count _visible,(groupId _selected) call _escape,_info param [0,-1],round (_info param [1,0]),
     _info param [2,"idle"],_info param [3,0],_info param [5,0],_info param [6,0],
-    _info param [4,[]],_info param [7,[]],_info param [8,[]],_roomText,_decision param [1,"native / no recorded decision"],_decision param [2,""]];
+    _result call _escape,_events,(_counters joinString ", ") call _escape,_roomText,
+    (_decision param [1,"native / no recorded decision"]) call _escape,((_decision param [2,""]) select [0,200]) call _escape];
+[_text] call VCM_fnc_DebugPanel;
