@@ -4,6 +4,7 @@ private _leaderBehaviour = behaviour leader _group;
 private _movement = leader _group getVariable ["VCM_MovementControl",[]];
 if (_movement isNotEqualTo []) then {_leaderBehaviour = _movement param [2,_leaderBehaviour]};
 if (!([_group] call VCM_fnc_GroupEnabled) || {_run isEqualTo []} ||
+    {!([_group] call VCM_fnc_Autonomy)} ||
     {!(_run isEqualTo (_group getVariable ["VCM_RunId", []]))} ||
     {!VCM_FIREMOVEMENT} || {!VCM_ADVANCEDMOVEMENT} ||
     {_group getVariable ["VCM_NOFLANK", false]} || {_group getVariable ["VCM_GarrisonBusy", false]} ||

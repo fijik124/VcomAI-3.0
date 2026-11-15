@@ -20,8 +20,8 @@ _wall setDir 90;
 _group setCombatMode "GREEN";
 _group reveal [_enemy,4];
 _group call VCM_fnc_SquadExc;
-private _aceOpt = VCM_ACECASEVAC;
-VCM_ACECASEVAC = true;
+private _evacEnabled = VCM_CASEVAC;
+VCM_CASEVAC = true;
 sleep 1.5;
 _group reveal [_enemy,4];
 private _readyUntil = diag_tickTime + 6;
@@ -32,10 +32,10 @@ waitUntil {sleep 0.1;
 _patient setUnconscious true;
 sleep 0.2;
 private _plan = [_group] call VCM_fnc_EvacPlan;
-diag_log format ["VCM_EVAC_PLAN: plan=%1 ready=%2 actors=%3 contact=%4 medical=%5 optIn=%6",
+diag_log format ["VCM_EVAC_PLAN: plan=%1 ready=%2 actors=%3 contact=%4 optIn=%5",
     _plan,[_group] call VCM_fnc_TacticalReady,
     _actors apply {[local _x,lifeState _x,_x getVariable ["ACE_isUnconscious",false],_x getVariable ["VCM_PatientBusy",false],_x getVariable ["VCM_Handlers",[]],getPosATL _x]},
-    [leader _group,_enemy] call VCM_fnc_ContactPosition,VCM_MEDICALACTIVE,VCM_ACECASEVAC];
+    [leader _group,_enemy] call VCM_fnc_ContactPosition,VCM_CASEVAC];
 [_plan isNotEqualTo [] && {_plan select 1 == _patient},"casualty planner selects an unconscious squadmate and nearby physical cover"] call _assert;
 if (_plan isNotEqualTo []) then {
     private _point = _plan select 2;
@@ -52,7 +52,7 @@ if (_plan isNotEqualTo []) then {
     [isNull attachedTo _patient && {lifeState _patient == "INCAPACITATED"} &&
         {_group getVariable ["VCM_Evacuation",[]] isEqualTo []},"completed evacuation releases attachments without healing or waking the patient"] call _assert;
 };
-VCM_ACECASEVAC = _aceOpt;
+VCM_CASEVAC = _evacEnabled;
 _group setVariable ["Vcm_Disable",true];
 sleep 0.5;
 {deleteVehicle _x} forEach (_actors + [_enemy,_wall]);

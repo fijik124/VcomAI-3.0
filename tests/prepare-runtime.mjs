@@ -9,7 +9,8 @@ const suite = process.argv[2] || 'all';
 const world = suite === 'cqb-floors' ? 'Altis' : 'VR';
 const folder = path.join(root, `build/runtime/VCM_Regression.${world}`);
 const addon = process.argv.includes('--addon');
-assert.ok(['all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors'].includes(suite));
+assert.ok(['all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors','dependencies','doctrine'].includes(suite));
+assert.ok(suite !== 'dependencies' || !addon, 'Missing-dependency checks require mission-script mode');
 const seconds = Number(process.argv.find(arg => arg.startsWith('--duration='))?.split('=')[1] || 60);
 assert.ok(Number.isInteger(seconds) && seconds >= 30 && seconds <= 1800);
 assert.equal(path.dirname(folder), path.join(root,'build/runtime'));
@@ -34,8 +35,11 @@ fs.copyFileSync(path.join(root, 'tests/evacuation.sqf'), path.join(folder, 'evac
 fs.copyFileSync(path.join(root, 'tests/cqb.sqf'), path.join(folder, 'cqb.sqf'));
 fs.copyFileSync(path.join(root, 'tests/cqb-control.sqf'), path.join(folder, 'cqb-control.sqf'));
 fs.copyFileSync(path.join(root, 'tests/cqb-floors.sqf'), path.join(folder, 'cqb-floors.sqf'));
+fs.copyFileSync(path.join(root, 'tests/dependencies.sqf'), path.join(folder, 'dependencies.sqf'));
+fs.copyFileSync(path.join(root, 'tests/doctrine.sqf'), path.join(folder, 'doctrine.sqf'));
+fs.copyFileSync(path.join(root, 'tests/autonomy.sqf'), path.join(folder, 'autonomy.sqf'));
 if (suite !== 'all') fs.writeFileSync(path.join(folder,'regression.sqf'), `if (!isServer) exitWith {};
-waitUntil {sleep 0.1; missionNamespace getVariable ["VCM_ServerReady",false]};
+${suite === 'dependencies' ? 'sleep 1;' : 'waitUntil {sleep 0.1; missionNamespace getVariable ["VCM_ServerReady",false]};'}
 VCM_TestCount=0; VCM_TestFailures=0;
 private _assert={params ["_condition","_name"]; VCM_TestCount=VCM_TestCount+1; if (!_condition) then {VCM_TestFailures=VCM_TestFailures+1}; diag_log format ["VCM_TEST_%1: %2",["FAIL","PASS"] select _condition,_name]};
 [] call compile preprocessFileLineNumbers "addon-layout.sqf";

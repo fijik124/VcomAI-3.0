@@ -466,12 +466,10 @@ class FSM
                 {
                         name = "Full_Check";
                         itemno = 17;
-                        init = /*%FSM<STATEINIT""">*/"private _ReturnResponse = _Group call VCM_fnc_KitChk;" \n
-                         "_ReturnResponse params [""_MedList"",""_L1""];" \n
+                        init = /*%FSM<STATEINIT""">*/"private _L1 = _group call VCM_fnc_RStatics;" \n
                          "_L1 params [""_StaticList"",""_SatchelList"",""_MineList""];" \n
                          "_BackbkC = time;" \n
                          "" \n
-                         "[_group,_MedList] call VCM_fnc_MedicalHandler;" \n
                          "_PullVehInfo = _group call VCM_fnc_VehicleCheck;" \n
                          "" \n
                          "_PullVehInfo params [""_GroupInVeh"",""_VehFullArr""];" \n

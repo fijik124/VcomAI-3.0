@@ -13,7 +13,7 @@ _group setVariable ["VCM_BoundState", _state];
 _group setVariable ["VCM_Committed",true,true];
 [_group,"bound","Advance one team while the other supplies physical covering fire",[],_position] call VCM_fnc_DebugDecision;
 [_group,_key] call VCM_fnc_AttackControl;
-_group setVariable ["VCM_NextBound", diag_tickTime + 45];
+_group setVariable ["VCM_NextBound", diag_tickTime + ([45,30] select (([_group] call VCM_fnc_Doctrine) == "assault"))];
 {_x setVariable ["VCM_BoundKey", _key, true]} forEach _units;
 [_group] call VCM_fnc_ClearWaypoints;
 private _valid = {

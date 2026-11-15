@@ -2,6 +2,7 @@ params ["_group"];
 private _strength = {alive _x} count units _group;
 private _peak = _group getVariable ["VCM_PeakStrength",0];
 if (_strength > _peak) then {_group setVariable ["VCM_PeakStrength",_strength,true]};
+[_group] call VCM_fnc_AutoDoctrine;
 if (_group getVariable ["VCM_NOAUTOTACTICS",false]) exitWith {
     if (_group getVariable ["VCM_Task",[]] isEqualTo []) then {[_group,"native","Mission disabled automatic tactical planning"] call VCM_fnc_DebugDecision};
 };
@@ -18,7 +19,20 @@ if (_retreat isNotEqualTo [] && {_group getVariable ["VCM_Task",[]] isEqualTo []
     if (_bound isNotEqualTo []) then {[_group,_bound select 0,"withdrawal"] call VCM_fnc_EndFireMove};
 };
 if (_retreat isNotEqualTo [] && {[_group] call VCM_fnc_TacticalReady}) exitWith {[_group,_retreat] spawn VCM_fnc_Retreat};
+private _flank = [_group] call VCM_fnc_CounterFlankPlan;
+if (_flank isNotEqualTo []) exitWith {
+    _flank params ["_flankEnemy","_flankPosition","_support","_movers","_positions"];
+    _group setVariable ["VCM_FlankAfter",diag_tickTime + VCM_FLANKCOOLDOWN];
+    _group setVariable ["VCM_ThreatAxis",[leader _group getDir _flankPosition,time],true];
+    [_group,"counterflank",[
+        [_support,_movers,_positions,VCM_POINTSECONDS,_flankPosition],
+        [_support + _movers,[],[],8,_flankPosition]
+    ],_flankEnemy,_flankPosition] spawn VCM_fnc_RunTactical;
+};
 if (!([_group] call VCM_fnc_TacticalReady)) exitWith {[_group,"mission control","Authored orders, a player, or another reservation takes priority"] call VCM_fnc_DebugDecision};
+private _objective = [_group] call VCM_fnc_ObjectivePlan;
+if (_objective isNotEqualTo []) exitWith {[_group,_objective] spawn VCM_fnc_ObjectiveTask};
+if (!([_group] call VCM_fnc_Autonomy)) exitWith {};
 private _enemy = leader _group call VCM_fnc_ClstEmy;
 private _contact = [leader _group,_enemy] call VCM_fnc_ContactPosition;
 if (_contact isEqualTo []) exitWith {[_group,"native","No usable remembered hostile contact"] call VCM_fnc_DebugDecision};

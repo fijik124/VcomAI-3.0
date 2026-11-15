@@ -1,7 +1,7 @@
 /* Run in the generated VR mission. Results are written to the server RPT. */
 if (!isServer) exitWith {};
 waitUntil {sleep 0.1; missionNamespace getVariable ["VCM_ServerReady", false]};
-diag_log format ["VCM_TEST_ENV: %1; CBA=%2; vanillaMedical=%3", productVersion, CBAACT, VCM_MEDICALACTIVE];
+diag_log format ["VCM_TEST_ENV: %1; required CBA/ACE addons=%2", productVersion, ["cba_main","cba_settings","ace_main","ace_medical","ace_medical_engine"] apply {isClass (configFile >> "CfgPatches" >> _x)}];
 VCM_TestFailures = 0;
 VCM_TestCount = 0;
 private _assert = {
@@ -101,11 +101,8 @@ _invalid set [_arrayIndex, ["VCM_AIDIFA", [[{hint "must never execute"}]]]];
 [!([_invalid] call VCM_fnc_ValidateSettings), "nested executable code rejected"] call _assert;
 [_snapshot isEqualTo (call VCM_fnc_SettingsSnapshot), "rejected snapshots do not mutate settings"] call _assert;
 [(VCM_SIDEENABLED findIf {!(_x isEqualType west)}) < 0, "side settings are flat side arrays"] call _assert;
-private _medical = VCM_MEDICALACTIVE;
-VCM_MEDICALACTIVE = false;
-_unit addItem "FirstAidKit";
-[!(_unit call VCM_fnc_HealSelf), "ACE adapter blocks vanilla treatment"] call _assert;
-VCM_MEDICALACTIVE = _medical;
+[isNil "VCM_fnc_HealSelf" && {isNil "VCM_fnc_MedicHeal"} && {isNil "VCM_fnc_MedicalHandler"} && {isNil "VCM_fnc_AIHIT"},
+    "ACE owns treatment and hit reactions; vanilla fallback functions are absent"] call _assert;
 
 // No compatible building must remain a bounded no-op and preserve existing PATH state.
 private _hold = _group addWaypoint [[2000,2000,0], 0];

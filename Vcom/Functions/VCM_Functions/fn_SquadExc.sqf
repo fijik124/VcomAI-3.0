@@ -1,10 +1,12 @@
 private _group = _this;
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group in VcmAI_ActiveList}) exitWith {};
 [_group] call VCM_fnc_RestoreCombat;
+[_group] call VCM_fnc_DoctrineRelease;
 [_group] call VCM_fnc_EvacRelease;
 private _cqb = _group getVariable ["VCM_CQBSession",[]];
 if (_cqb isNotEqualTo []) then {[_group,_cqb select 0,"owner-changed"] call VCM_fnc_CQBRelease};
 _group setVariable ["VCM_Committed",false,true];
+_group setVariable ["VCM_ObjectiveContext",nil,true];
 _group setVariable ["VCM_ATShooter",nil];
 private _mission = _group getVariable ["VCM_CoordMission",[]];
 if (_mission isNotEqualTo [] && {time >= (_mission select 2) || {_mission select 3 != clientOwner}}) then {
@@ -30,6 +32,7 @@ private _fsm = _group execFSM "Vcom\FSMS\fn_SQUADBEH.fsm";
             if (diag_tickTime >= _nextBind) then {[_group] call VCM_fnc_BindUnits; _nextBind = diag_tickTime + 1};
             {[_x, _run] call VCM_fnc_SafetyTick} forEach (_group getVariable ["VCM_BoundUnits", []]);
             if (diag_tickTime >= _nextUtility) then {
+                [_group] call VCM_fnc_CommandTick;
                 [_group] call VCM_fnc_ConvoyTick;
                 private _mission = _group getVariable ["VCM_CoordMission",[]];
                 if (_mission isNotEqualTo [] && {time >= (_mission select 2)}) then {[_group,_mission select 0] call VCM_fnc_CoordRelease};

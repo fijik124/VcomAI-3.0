@@ -1,11 +1,11 @@
-/* Recover AI casualties only; ACE participation is opt-in and never changes medical state. */
+/* Optional AI casualty recovery; ACE Medical retains the patient's medical state. */
 params ["_group"];
-if (!VCM_CASEVAC || {!VCM_MEDICALACTIVE && {!VCM_ACECASEVAC}} ||
+if (!VCM_CASEVAC ||
     {!([_group] call VCM_fnc_TacticalReady)} || {diag_tickTime < (_group getVariable ["VCM_EvacAfter",-1])}) exitWith {[]};
 private _patients = (units _group) select {
     local _x && {alive _x} && {!([_x] call VCM_fnc_HumanControlled)} && {isNull objectParent _x} &&
     {isNull attachedTo _x} && {!(_x getVariable ["VCM_PatientBusy",false])} &&
-    {lifeState _x == "INCAPACITATED" || {VCM_ACECASEVAC && {_x getVariable ["ACE_isUnconscious",false]}}}
+    {lifeState _x == "INCAPACITATED" || {_x getVariable ["ACE_isUnconscious",false]}}
 };
 private _rescuers = ([_group] call VCM_fnc_TacticalUnits) select {!(_x getUnitTrait "Medic")};
 if (_patients isEqualTo [] || {_rescuers isEqualTo []}) exitWith {[]};

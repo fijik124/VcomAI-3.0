@@ -17,6 +17,28 @@ class VCOM
 	{
 		file = "Vcom\Functions\VCM_Functions";
 		class InitSettings { preInit = 1; };
+		class Doctrine {};
+		class AutoDoctrine {};
+		class Autonomy {};
+		class DoctrineRelease {};
+		class CommandTick {};
+		class CommanderRequest {};
+		class CommanderOrder {};
+		class ZeusModule {};
+		class CuratorUI {};
+		class DangerRemember {};
+		class DangerPenalty {};
+		class DefensivePosition {};
+		class CounterFlankPlan {};
+		class ObjectivePlan {};
+		class ObjectiveTask {};
+		class ObjectiveValid {};
+		class ReconRelease {};
+		class ReconReport {};
+		class ReconPublish {};
+		class NightTick {};
+		class NightRelease {};
+		class RestoreNight {};
 		class DebugTrace {};
 		class DebugDecision {};
 		class DebugState {};
@@ -116,9 +138,6 @@ class VCOM
 		// [unitToRearm, rearmLocation] spawn VCM_fnc_ActRearm
 		class ActRearm {};
 
-		// [unit, source, damage, instigator] call VCM_fnc_AIHIT;
-		class AIHIT {};
-
 		// [group] call VCM_fnc_ArmStatics;
 		class ArmStatics {};
 
@@ -179,9 +198,6 @@ class VCOM
 		// unit call VCM_fnc_HasMine;
 		class HasMine {};
 
-		// unit call VCM_fnc_HealSelf;
-		class HealSelf {};
-
 		// [unit, weapon, muzzle, mode, ammo, magazine, bullet, gunner] call VCM_fnc_HearingAids;
 		class HearingAids {};
 
@@ -191,17 +207,8 @@ class VCOM
 		// [] call VCM_fnc_IRCHECK;
 		class IRCHECK {};
 
-		// group call VCM_fnc_KitChk;
-		class KitChk {};
-
 		// [array, unitToReveal, revealAmount] call VCM_fnc_KnowAbout;
 		class KnowAbout {};
-
-		// group call VCM_fnc_MedicalHandler
-		class MedicalHandler {};
-
-		//[medic, injuredUnit] spawn VCM_fnc_MedicHeal;
-		class MedicHeal {};
 
 		// [] spawn VCM_fnc_MineMonitor;
 		class MineMonitor {};
@@ -214,9 +221,6 @@ class VCOM
 
 		// group call VCM_fnc_RearmSelf;
 		class RearmSelf {};
-
-		// group call VCM_fnc_RMedics;
-		class RMedics {};
 
 		// group call VCM_fnc_RStatics;
 		class RStatics {};

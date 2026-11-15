@@ -25,7 +25,7 @@ function copyCode(from,to) {
 }
 const remoteFunctions = fs.readFileSync(path.join(root,'description.ext'),'utf8')
   .match(/class VCM_fnc_\w+\s*\{[^}]*\};/g);
-assert.equal(remoteFunctions?.length,13,'Product RPC whitelist must be included');
+assert.equal(remoteFunctions?.length,15,'Product RPC whitelist must be included');
 for (const module of project.modules) {
   const addon = path.join(stage,'addons',module.id);
   fs.mkdirSync(addon,{recursive:true});
@@ -49,6 +49,7 @@ for (const module of project.modules) {
     extra = `class FSM { file="${virtualRoot('squad')}\\fsm"; class SQUADBEH { ext=".fsm"; }; };`;
   }
   if (module.id === 'main') {
+    fs.copyFileSync(path.join(root,'Vcom/modules.hpp'),path.join(addon,'modules.hpp'));
     fs.mkdirSync(path.join(addon,'functions'),{recursive:true});
     fs.writeFileSync(path.join(addon,'functions/fn_AddonStart.sqf'),
       `if (!is3DEN) then {[] execVM "${virtualRoot('core')}\\VcomInit.sqf"};\n`);
@@ -56,17 +57,18 @@ for (const module of project.modules) {
   }
   const required = module.id === 'main'
     ? project.modules.filter(item => item.id !== 'main').map(item => `${project.prefix}_${item.id}`)
-    : [module.id === 'core' ? 'A3_Functions_F' : `${project.prefix}_core`];
+    : module.id === 'core' ? ['A3_Functions_F', 'A3_Modules_F', ...project.requiredAddons] : [`${project.prefix}_core`];
   fs.writeFileSync(path.join(addon,'config.cpp'),`class CfgPatches {
  class ${project.prefix}_${module.id} { name="${project.name} - ${module.id}"; author="${project.author}";
  requiredVersion=2.22; requiredAddons[]={${required.map(name => `"${name}"`).join(',')}};
- units[]={}; weapons[]={}; version="${project.version}"; };
+ units[]={${(module.units || []).map(name => `"${name}"`).join(',')}}; weapons[]={}; version="${project.version}"; };
 };
 class CfgFunctions { class VCOM { tag="VCM";
  class ${module.category} { file="${virtualRoot(module.id)}\\functions"; ${registered.join('\n')} };
  ${extra}
 }; };
 ${module.id === 'core' ? `class CfgRemoteExec { class Functions { ${remoteFunctions.join('\n')} }; };` : ''}
+${module.id === 'main' ? '#include "modules.hpp"' : ''}
 `);
 }
 fs.writeFileSync(path.join(stage,'REMOTE-EXEC.hpp'),`class CfgRemoteExec { class Functions { ${remoteFunctions.join('\n')} }; };\n`);
@@ -80,12 +82,12 @@ minor = ${minor}
 patch = ${patch}
 git_hash = 0
 [files]
-include = ["README.md", "MIGRATION.md", "ROADMAP.md", "FEATURES.md", "REMOTE-EXEC.hpp", "ADDON-MODULES.json", "userconfig/**"]
+include = ["README.md", "MIGRATION.md", "ROADMAP.md", "FEATURES.md", "COMMANDS.md", "REMOTE-EXEC.hpp", "ADDON-MODULES.json", "userconfig/**"]
 `);
 fs.writeFileSync(path.join(stage,'mod.cpp'),`name="${project.name} ${project.version}"; author="${project.author}"; tooltip="${project.name}"; description="Modular VCOM AI edited by Fijik; original VCOM by Genesis";\n`);
 fs.writeFileSync(path.join(stage,'README.md'),`# ${project.name} ${project.version}
 
-Install ${project.modFolder} as an Arma 3 mod and load it on server, headless clients and players with -mod=${project.modFolder}. Requires Arma 3 2.22 or newer. CBA and ACE are optional.
+Install ${project.modFolder} as an Arma 3 mod on the server, headless clients and players. Requires Arma 3 2.22 or newer, CBA_A3 and ACE including ACE Medical on every machine. Load CBA_A3 and ACE before ${project.modFolder}.
 
 Remove older VCOM addons, including the old @VCOM_AI folder, and embedded mission copies before loading this edition. The addon starts itself. Keep all eight PBOs together; disable behaviors through settings rather than deleting PBOs. Shared function calls still require the complete set.
 
@@ -93,13 +95,13 @@ ${project.modules.map(module => `- vcm_${module.id}.pbo: ${module.description}.`
 
 Copy the supplied public .bikey into the server's keys folder when signature verification is enabled. No private key is included. Merge REMOTE-EXEC.hpp into missions that restrict remote execution.
 
-Defaults work without file patching. CBA provides VCOM settings when installed. Optional userconfig files go into the Arma root's userconfig/VCOM_AI folder and require server file patching. Existing VCM_fnc_* names and mission-script paths remain compatible.
+Configure VCOM through CBA Addon Options. Optional userconfig startup defaults go into the Arma root's userconfig/VCOM_AI folder and require server file patching; saved CBA settings take priority. The old CBA bypass switch and vanilla treatment/hit-reaction functions have been removed. Mission-script installation also requires CBA_A3 and ACE Medical.
 
 Splitting PBOs organizes maintenance and updates; it does not itself increase FPS. FEATURES.md and MIGRATION.md describe behavior and verification. Original VCOM: Genesis. This edition: Fijik.
 `);
 fs.writeFileSync(path.join(stage,'ADDON-MODULES.json'),JSON.stringify(project,null,2) + '\n');
 fs.cpSync(path.join(root,'userconfig'),path.join(stage,'userconfig'),{recursive:true});
-for (const name of ['MIGRATION.md','ROADMAP.md','FEATURES.md']) fs.copyFileSync(path.join(root,name),path.join(stage,name));
+for (const name of ['MIGRATION.md','ROADMAP.md','FEATURES.md','COMMANDS.md']) fs.copyFileSync(path.join(root,name),path.join(stage,name));
 const result = spawnSync('hemtt',['release','--no-bin','--no-color'],{cwd:stage,encoding:'utf8'});
 const output = (result.stdout || '') + (result.stderr || '');
 fs.writeFileSync(path.join(root,'build/release.log'),output);

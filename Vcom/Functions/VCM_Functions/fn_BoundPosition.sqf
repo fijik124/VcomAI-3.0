@@ -21,7 +21,8 @@ private _bestScore = -1e6;
         {_reserved findIf {_x distance2D _position < 3} < 0}) then {
         private _protection = 0;
         if (VCM_COVERSEARCH) then {_protection = [_unit, _position, _target] call VCM_fnc_CoverProtection};
-        private _score = 30 * _protection - 0.5 * (_position distance2D _preferred) - 0.1 * (_unit distance2D _position);
+        private _score = 30 * _protection - 0.5 * (_position distance2D _preferred) - 0.1 * (_unit distance2D _position) -
+            ([group _unit,_position] call VCM_fnc_DangerPenalty);
         if (_score > _bestScore) then {_bestScore = _score; _best = _position};
     };
 } forEach [[0,0], [0,-4], [0,4], [0,-8], [0,8], [-4,0], [-4,-4], [-4,4]];

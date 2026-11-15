@@ -9,5 +9,6 @@ _group setVariable ["VCM_LastTaskDetail",(_state select 2) apply {[_x,getPosATL 
 {[_x,_key] call VCM_fnc_ReleaseTacticalUnit} forEach (_state select 2);
 _group setVariable ["VCM_LastTask",[_state select 1,_reason,_state select 3,_state select 4],local _group];
 _group setVariable ["VCM_Task",nil];
+if (((_group getVariable ["VCM_ObjectiveContext",[]]) param [0,[]]) isEqualTo _key) then {_group setVariable ["VCM_ObjectiveContext",nil,true]};
 if (((_group getVariable ["VCM_AttackControl",[]]) param [0,[]]) isEqualTo _key) then {[_group] call VCM_fnc_AttackControl};
 if (local _group) then {_group setVariable ["VCM_Committed",false,true]};

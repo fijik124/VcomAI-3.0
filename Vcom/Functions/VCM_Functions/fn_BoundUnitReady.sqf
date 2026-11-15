@@ -4,7 +4,7 @@ params ["_unit", "_group", "_run"];
 {damage _unit < 0.4} && {!(_unit getUnitTrait "Medic")} && {_unit checkAIFeature "PATH"} &&
 {unitCombatMode _unit in ["YELLOW", "RED"]} && {getSuppression _unit < 0.7} &&
 {primaryWeapon _unit != ""} && {_unit ammo primaryWeapon _unit > 0} &&
-{!(_unit getVariable ["VCM_MBUSY", false])} && {!(_unit getVariable ["VCM_PatientBusy", false])} &&
+{!(_unit getVariable ["VCM_PatientBusy", false])} &&
 {!(_unit getVariable ["VCM_DeployBusy", false])}
 && {_unit getVariable ["VCM_MoveKey", []] isEqualTo []}
 && {_unit getVariable ["VCM_TaskKey", []] isEqualTo []}

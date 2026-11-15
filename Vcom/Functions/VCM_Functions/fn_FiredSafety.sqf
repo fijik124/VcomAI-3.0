@@ -13,7 +13,7 @@ if (_weapon == "Throw" && {VCM_NOGRENADESINDOORS} && {[_unit,true] call VCM_fnc_
 private _smokeAim = _unit getVariable ["VCM_SmokeAim",[]];
 if (_weapon == "Throw" && {_smokeAim isNotEqualTo []} && {_smokeAim select 0 == _magazine} && {time < (_smokeAim select 2)}) then {
     _projectile setVelocity (_smokeAim select 1);
-    _unit setVariable ["VCM_LastSmoke",[time,_projectile],true];
+    _unit setVariable [if ((_smokeAim param [3,"smoke"]) == "flare") then {"VCM_LastFlare"} else {"VCM_LastSmoke"},[time,_projectile],true];
 };
 if (_weapon == "Throw" && {VCM_GRENADESAFETY}) then {
     private _prediction = [_unit,_ammo,getPosASL _projectile,velocity _projectile,_projectile] call VCM_fnc_ThrowSafe;

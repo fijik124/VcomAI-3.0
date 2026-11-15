@@ -1,6 +1,7 @@
 /* Mission-authored waypoints take priority over autonomous maneuvers. */
 params ["_leader"];
 private _group = group _leader;
+if (!([_group] call VCM_fnc_Autonomy)) exitWith {};
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
 if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};
 if (!([_group] call VCM_fnc_GroupEnabled) || {_group getVariable ["VCM_NOFLANK", false]}) exitWith {};
@@ -15,6 +16,12 @@ if (_target isEqualTo []) exitWith {};
 private _direction = _target getDir (getPosATL _leader);
 private _flank = _target getPos [100 + random 100, _direction + selectRandom [-70, 70]];
 private _safe = [_flank, 0, 50, 3, 0, 0.5, 0, [], [_flank, _flank]] call BIS_fnc_findSafePos;
+private _choices = [_safe];
+{_choices pushBack (_flank getPos [30,_x])} forEach [0,90,180,270];
+_choices = _choices select {!surfaceIsWater _x && {(surfaceNormal _x select 2) > 0.75}};
+if (_choices isEqualTo []) exitWith {};
+_choices = [_choices,[],{[_group,_x] call VCM_fnc_DangerPenalty},"ASCEND"] call BIS_fnc_sortBy;
+_safe = _choices select 0;
 if (surfaceIsWater _safe) exitWith {};
 private _waypoint = [_group, _safe] call VCM_fnc_AddWaypoint;
 [_group, _target] call VCM_fnc_AddWaypoint;

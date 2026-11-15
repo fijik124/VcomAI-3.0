@@ -1,5 +1,5 @@
 /* Native acceptance for 3.5 controls, bounded telemetry and physical feature safeguards. */
-diag_log format ["VCM_ADVANCED_ENV: %1 CBA=%2 vanillaMedical=%3",productVersion,CBAACT,VCM_MEDICALACTIVE];
+diag_log format ["VCM_ADVANCED_ENV: %1 CBA registered=%2 ACE Medical=%3",productVersion,missionNamespace getVariable ["VCM_CBARegistered",false],isClass (configFile >> "CfgPatches" >> "ace_medical")];
 VCM_ADVANCEDMOVEMENT = false;
 VCM_FIREMOVEMENT = false;
 VCM_StealVeh = false;
@@ -18,14 +18,14 @@ private _bad = +_snapshot;
 private _index = _bad findIf {(_x select 0) == "VCM_BUDGETMS"};
 _bad set [_index,["VCM_BUDGETMS",-1]];
 [!([_bad] call VCM_fnc_ValidateSettings),"out-of-range planning budget is rejected"] call _assert;
-if (CBAACT) then {
-    [missionNamespace getVariable ["VCM_CBARegistered",false],"CBA registry initializes in native addon startup"] call _assert;
-    [_names findIf {isNil {[_x,"default"] call CBA_settings_fnc_get}} < 0,"CBA contains every new feature and debugger control"] call _assert;
-    private _overlayDefault = ["VCM_DEBUGOVERLAY","default"] call CBA_settings_fnc_get;
-    private _budgetDefault = ["VCM_BUDGETMS","default"] call CBA_settings_fnc_get;
-    [!isNil "_overlayDefault" && {_overlayDefault isEqualType true},"CBA debugger overlay is a checkbox"] call _assert;
-    [!isNil "_budgetDefault" && {_budgetDefault isEqualType 0},"CBA planning budget is numeric"] call _assert;
-};
+[missionNamespace getVariable ["VCM_CBARegistered",false],"CBA registry initializes in native addon startup"] call _assert;
+[_names findIf {isNil {[_x,"default"] call CBA_settings_fnc_get}} < 0,"CBA contains every new feature and debugger control"] call _assert;
+private _overlayDefault = ["VCM_DEBUGOVERLAY","default"] call CBA_settings_fnc_get;
+private _budgetDefault = ["VCM_BUDGETMS","default"] call CBA_settings_fnc_get;
+[!isNil "_overlayDefault" && {_overlayDefault isEqualType true},"CBA debugger overlay is a checkbox"] call _assert;
+[!isNil "_budgetDefault" && {_budgetDefault isEqualType 0},"CBA planning budget is numeric"] call _assert;
+[["VCM_CASEVAC","default"] call CBA_settings_fnc_get isEqualTo false,"AI evacuation stays disabled by default with ACE Medical"] call _assert;
+[isNil {["VCM_ACECASEVAC","default"] call CBA_settings_fnc_get},"obsolete ACE compatibility switch is not registered"] call _assert;
 private _group = createGroup [west,true];
 _group setVariable ["VCM_NOAUTOTACTICS",true];
 _group setVariable ["VCM_Skilldisable",true];
@@ -127,13 +127,10 @@ private _patient = _units select 1;
 _patient setPosATL (_unit getPos [1,90]);
 _patient setUnconscious true;
 sleep 0.25;
-private _medical = VCM_MEDICALACTIVE;
-private _aceOpt = VCM_ACECASEVAC;
-if (!_medical) then {
-    VCM_ACECASEVAC = false;
-    [!([_group,_key,_unit,_patient] call VCM_fnc_EvacAttach),"ACE casualty evacuation requires explicit opt-in"] call _assert;
-    VCM_ACECASEVAC = true;
-};
+private _evacEnabled = VCM_CASEVAC;
+VCM_CASEVAC = false;
+[!([_group,_key,_unit,_patient] call VCM_fnc_EvacAttach),"ACE casualty evacuation requires explicit opt-in"] call _assert;
+VCM_CASEVAC = true;
 _unit forceSpeed 2;
 private _attached = [_group,_key,_unit,_patient] call VCM_fnc_EvacAttach;
 [_attached && {attachedTo _patient == _unit} && {getForcedSpeed _unit == 1},"casualty evacuation physically attaches the patient at walking speed"] call _assert;
@@ -144,7 +141,7 @@ waitUntil {sleep 0.25; scriptDone _move || {diag_tickTime > _deadline + 15}};
 [_group,_key] call VCM_fnc_EvacRelease;
 [isNull attachedTo _patient && {getForcedSpeed _unit == 2} && {!(_patient getVariable ["VCM_PatientBusy",false])},"evacuation release detaches the patient and restores prior speed"] call _assert;
 _unit forceSpeed -1;
-VCM_ACECASEVAC = _aceOpt;
+VCM_CASEVAC = _evacEnabled;
 _patient setUnconscious false;
 // Native convoy control keeps the authored route and releases its speed changes.
 private _convoy = createGroup [west,true];

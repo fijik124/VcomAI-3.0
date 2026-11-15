@@ -5,6 +5,29 @@ if (!local _group) exitWith {};
 private _unit = leader _group;
 private _run = _group getVariable ["VCM_RunId", []];
 switch (_operation) do {
+    case "doctrinePost": {
+        [_group] call VCM_fnc_CommandTick;
+        _group setVariable ["VCM_NextTactic",1e9];
+        _group setVariable ["VCM_ObjectiveAfter",-1];
+        private _plan = [_group] call VCM_fnc_ObjectivePlan;
+        _group setVariable ["VCM_TestDoctrinePlan",_plan,true];
+        if (_plan isNotEqualTo []) then {[_group,_plan] spawn VCM_fnc_ObjectiveTask};
+    };
+    case "dangerMemory": {[_group,getPosATL _unit,1,"incoming fire"] call VCM_fnc_DangerRemember};
+    case "forgedCommander": {
+        private _identity = if (_position param [0,false]) then {objNull} else {player};
+        [_identity,"doctrine","assault",[_group],getPosATL _unit,0,10] remoteExecCall ["VCM_fnc_CommanderRequest",2];
+    };
+    case "reconReport": {
+        _position params ["_enemy",["_claimed",_group],["_nullIdentity",false]];
+        [_group,_enemy,_claimed,_nullIdentity] spawn {
+            params ["_group","_enemy","_claimed","_nullIdentity"];
+            _group reveal [_enemy,4]; sleep 0.3;
+            private _point = [leader _group,_enemy] call VCM_fnc_ContactPosition;
+            private _identity = if (_nullIdentity) then {objNull} else {player};
+            if (_point isNotEqualTo []) then {[_claimed,[[_enemy,_point]],_identity] remoteExecCall ["VCM_fnc_ReconReport",2]};
+        };
+    };
     case "requestCoord": {
         _position params ["_enemy","_point","_kind",["_claimed",_group],["_asset",objNull]];
         _group reveal [_enemy,4];
@@ -28,7 +51,7 @@ switch (_operation) do {
             params ["_group","_unit","_patient"];
             sleep 0.3;
             private _attached = [_group,[_group getVariable ["VCM_RunId",[]],900],_unit,_patient] call VCM_fnc_EvacAttach;
-            _group setVariable ["VCM_TestEvacDiag",[_attached,local _unit,local _patient,_unit distance _patient,lifeState _patient,attachedTo _patient,VCM_MEDICALACTIVE,VCM_ACECASEVAC],true];
+            _group setVariable ["VCM_TestEvacDiag",[_attached,local _unit,local _patient,_unit distance _patient,lifeState _patient,attachedTo _patient,VCM_CASEVAC],true];
         };
     };
     case "releaseHold": {

@@ -6,6 +6,7 @@ private _bound = _group getVariable ["VCM_BoundState", []];
 if (_bound isNotEqualTo [] && {(_bound select 0 select 0) isEqualTo _run}) then {
     [_group, _bound select 0, "cancelled"] call VCM_fnc_EndFireMove;
 };
+[_group] call VCM_fnc_DoctrineRelease;
 if (_units isEqualTo []) then {_units = _group getVariable ["VCM_BoundUnits", []]};
 {
     private _unit = _x;
@@ -16,12 +17,6 @@ if (_units isEqualTo []) then {_units = _group getVariable ["VCM_BoundUnits", []
         _unit setVariable ["VCM_Handlers", nil];
     };
     if (local _unit && {_current} && {group _unit isEqualTo _group} && {(_saved select 0) isEqualTo _run}) then {
-        private _stance = _unit getVariable ["VCM_HitStance", ""];
-        if (_stance != "") then {
-            _unit setUnitPos _stance;
-            _unit setVariable ["VCM_HitStance", nil, true];
-        };
-        _unit setVariable ["VCM_MBUSY", false];
         _unit setVariable ["VCM_PatientBusy", false];
         _unit setVariable ["VCM_DeployBusy", false];
         _unit setVariable ["VCM_MoveKey", nil];

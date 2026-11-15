@@ -34,12 +34,15 @@ fs.copyFileSync(path.join(root, 'tests/evacuation.sqf'), path.join(addon, 'evacu
 fs.copyFileSync(path.join(root, 'tests/cqb.sqf'), path.join(addon, 'cqb.sqf'));
 fs.copyFileSync(path.join(root, 'tests/cqb-control.sqf'), path.join(addon, 'cqb-control.sqf'));
 fs.copyFileSync(path.join(root, 'tests/cqb-floors.sqf'), path.join(addon, 'cqb-floors.sqf'));
+fs.copyFileSync(path.join(root, 'tests/dependencies.sqf'), path.join(addon, 'dependencies.sqf'));
+fs.copyFileSync(path.join(root, 'tests/doctrine.sqf'), path.join(addon, 'doctrine.sqf'));
+fs.copyFileSync(path.join(root, 'tests/autonomy.sqf'), path.join(addon, 'autonomy.sqf'));
 fs.cpSync(path.join(root, 'tests/multiplayer'), path.join(addon, 'mp'), { recursive: true });
 fs.copyFileSync(path.join(root, 'userconfig/VCOM_AI/AISettingsV3.hpp'), path.join(addon, 'userconfig.sqf'));
 const [versionMajor,versionMinor,versionPatch] = project.version.split('.');
 fs.writeFileSync(path.join(stage, '.hemtt/project.toml'), `name = "${project.name} validation"\nprefix = "vcm"\nmainprefix = "z"\n[version]\nmajor = ${versionMajor}\nminor = ${versionMinor}\npatch = ${versionPatch}\ngit_hash = 0\n`);
 fs.writeFileSync(path.join(addon, '$PBOPREFIX$'), 'z\\vcm\\addons\\vcom');
-fs.writeFileSync(path.join(addon, 'config.cpp'), 'class CfgPatches { class VCM_validation { units[] = {}; weapons[] = {}; requiredVersion = 2.22; requiredAddons[] = {"A3_Functions_F"}; }; };\n#include "mission.hpp"\n');
+fs.writeFileSync(path.join(addon, 'config.cpp'), `class CfgPatches { class VCM_validation { units[] = {}; weapons[] = {}; requiredVersion = 2.22; requiredAddons[] = {"A3_Functions_F","A3_Modules_F",${project.requiredAddons.map(name => `"${name}"`).join(',')}}; }; };\n#include "mission.hpp"\n#include "Vcom/modules.hpp"\n`);
 
 // HEMTT's SQF compiler must also see code stored inside FSM config strings.
 const fsm = fs.readFileSync(path.join(root, 'Vcom/FSMS/fn_SQUADBEH.fsm'), 'utf8');

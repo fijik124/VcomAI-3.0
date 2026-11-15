@@ -1,6 +1,8 @@
 /* Restore only VCOM-owned state when binding, disabling or handing an AI to a human. */
 params ["_unit"];
 if (!local _unit) exitWith {};
+[_unit] call VCM_fnc_ReconRelease;
+[_unit] call VCM_fnc_RestoreNight;
 [_unit] call VCM_fnc_RestoreSafety;
 [_unit] call VCM_fnc_MovementControl;
 private _at = _unit getVariable ["VCM_ATWeapon",[]];

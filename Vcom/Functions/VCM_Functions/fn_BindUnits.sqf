@@ -26,13 +26,11 @@ _bound = _bound select {group _x == _group && {!isPlayer _x} && {local _x} && {a
         _unit setVariable ["VCM_MoveKey", nil];
         private _boundKey = _unit getVariable ["VCM_BoundKey", []];
         if (_boundKey isNotEqualTo []) then {[_unit, _boundKey] call VCM_fnc_ReleaseBoundUnit};
-        private _stance = _unit getVariable ["VCM_HitStance", ""];
-        if (_stance != "") then {
-            _unit setUnitPos _stance;
-            _unit setVariable ["VCM_HitStance", nil, true];
-        };
         private _handlers = [];
-        _handlers pushBack ["Killed", _unit addEventHandler ["Killed", {_this spawn VCM_fnc_ClstWarn}]];
+        _handlers pushBack ["Killed", _unit addEventHandler ["Killed", {
+            [group (_this select 0),getPosATL (_this select 0),2,"casualty"] call VCM_fnc_DangerRemember;
+            _this spawn VCM_fnc_ClstWarn;
+        }]];
         _handlers pushBack ["FiredMan", _unit addEventHandler ["FiredMan", {
             private _group = group (_this select 0);
             if (_group getVariable ["VCM_PlanInterval",2] > VCM_NEARTICK) then {_group setVariable ["VCM_NextTactic",0]};
@@ -40,10 +38,14 @@ _bound = _bound select {group _x == _group && {!isPlayer _x} && {local _x} && {a
         }]];
         _handlers pushBack ["Hit", _unit addEventHandler ["Hit", {
             private _group = group (_this select 0);
+            _group setVariable ["VCM_LastIncoming",time,true];
+            if (time >= (_group getVariable ["VCM_DangerAfter",-1])) then {
+                [ _group,getPosATL (_this select 0),1,"incoming fire"] call VCM_fnc_DangerRemember;
+                _group setVariable ["VCM_DangerAfter",time + 2];
+            };
             if (diag_tickTime >= (_group getVariable ["VCM_WakeAfter",-1])) then {
                 _group setVariable ["VCM_NextTactic",0]; _group setVariable ["VCM_WakeAfter",diag_tickTime + VCM_NEARTICK];
             };
-            _this call VCM_fnc_AIHIT;
         }]];
         _unit setVariable ["VCM_Handlers", [_run, _handlers]];
         _bound pushBack _unit;

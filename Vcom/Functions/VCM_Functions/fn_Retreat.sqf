@@ -1,6 +1,12 @@
 params ["_group","_plan"];
 if (!([_group] call VCM_fnc_TacticalReady) || {_plan isEqualTo []}) exitWith {false};
 _plan params ["_enemy","_contact","_reason"];
+private _fallback = [_group,"fallback"] call VCM_fnc_ObjectivePlan;
+if (_fallback isNotEqualTo []) exitWith {
+    _group setVariable ["VCM_RetreatAfter",diag_tickTime + VCM_RETREATCOOLDOWN];
+    _group setVariable ["VCM_RetreatReason",_reason,true];
+    [_group,_fallback] call VCM_fnc_ObjectiveTask
+};
 private _units = ([_group] call VCM_fnc_TacticalUnits) select [0,12];
 if (count _units < 2) exitWith {false};
 _units = [_units,[],{private _type = [primaryWeapon _x] call BIS_fnc_itemType; [1,0] select ((_type param [1,""]) == "MachineGun")},"ASCEND"] call BIS_fnc_sortBy;

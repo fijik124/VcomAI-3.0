@@ -1,5 +1,4 @@
 if (missionNamespace getVariable ["VCM_CBARegistered", false]) exitWith {};
-if (!CBAACT || {!VCM_USECBASETTINGS}) exitWith {};
 if (!(missionNamespace getVariable ["cba_settings_ready",false])) exitWith {};
 VCM_CBARegistered = true;
 {
@@ -25,8 +24,7 @@ VCM_CBARegistered = true;
     ["VCM_TACTICALRETREAT", "Tactical withdrawal"],
     ["VCM_REACTIVESUPPRESSION", "Support pressured squadmates"],
     ["VCM_BUILDINGCLEARING", "Building entry and support teams"],
-    ["VCM_COMBINEDARMS", "Infantry and ground vehicle coordination"],
-    ["VCM_RAGDOLL", "React to hits (stance only)"]
+    ["VCM_COMBINEDARMS", "Infantry and ground vehicle coordination"]
 ];
 // Retain the old saved CBA name, mapping its raw boolean value to the runtime setting.
 ["VCM_ForceSpeed", "CHECKBOX", "Full speed in combat", "VCOM Edited by Fijik", VCM_FullSpeed, true,
@@ -37,7 +35,6 @@ VCM_CBARegistered = true;
 } forEach [
     ["VCM_DISEMBARKRANGE", "Dismount distance", 50, 1000],
     ["VCM_AIDISTANCEVEHPATH", "Vehicle search distance", 0, 1000],
-    ["VCM_RAGDOLLCHC", "Hit reaction chance", 0, 100],
     ["VCM_HEARINGDISTANCE", "Gunfire hearing distance", 0, 10000],
     ["VCM_WARNDIST", "Reinforcement range", 0, 10000],
     ["VCM_WARNDELAY", "Reinforcement delay", 0, 10000],

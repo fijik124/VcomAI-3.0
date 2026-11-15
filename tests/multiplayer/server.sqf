@@ -49,6 +49,11 @@ VCM_ADVANCEDMOVEMENT = false;
 VCM_StealVeh = false;
 VCM_FRMCHANGE = false;
 VCM_ARTYENABLE = false;
+private _jipDoctrineGroup = createGroup [west,true];
+_jipDoctrineGroup setVariable ["VCM_NOAUTOTACTICS",true,true];
+private _jipDoctrineUnit = _jipDoctrineGroup createUnit ["B_Soldier_F",[9000,9000,0],[],0,"NONE"];
+[objNull,"point","defend",[_jipDoctrineGroup],[9020,9000,0],0,10] call VCM_fnc_CommanderOrder;
+private _jipPointId = (_jipDoctrineGroup getVariable ["VCM_Objective",[]]) param [0,""];
 sleep 2;
 private _initialSettings = call VCM_fnc_SettingsSnapshot;
 diag_log "VCM_MP_SERVER_READY";
@@ -66,6 +71,7 @@ private _first = (call _owners) select 0;
 private _joined = VCM_MP_Reports get format ["%1:joined", _first];
 [_joined select 0, "first headless client reports didJIP"] call _assert;
 [_joined select 1, "first headless client initializes VCOM settings"] call _assert;
+[_jipPointId != "" && {(_joined param [5,[]]) findIf {_x select 0 == _jipPointId} >= 0},"first HC receives existing command points when joining"] call _assert;
 if (VCM_TestAddonChecks isNotEqualTo []) then {
     [count (_joined param [4,[]]) == count VCM_TestAddonChecks && {(_joined select 4) findIf {!_x} < 0},
         "first HC loads every addon module and its functions"] call _assert;
@@ -92,11 +98,15 @@ if (!_connected) exitWith {call _finish};
 private _second = (call _owners) select 1;
 _joined = VCM_MP_Reports get format ["%1:joined", _second];
 [_joined select 0, "second headless client reports didJIP"] call _assert;
+[(_joined param [5,[]]) findIf {_x select 0 == _jipPointId} >= 0,"later HC receives the current command-point registry"] call _assert;
 if (VCM_TestAddonChecks isNotEqualTo []) then {
     [count (_joined param [4,[]]) == count VCM_TestAddonChecks && {(_joined select 4) findIf {!_x} < 0},
         "second HC loads every addon module and its functions"] call _assert;
 };
 [(_joined select 2) isEqualTo _updatedSettings, "later join receives current settings rather than defaults"] call _assert;
+[objNull,"resetGroup","",[_jipDoctrineGroup],getPosATL _jipDoctrineUnit,0,10] call VCM_fnc_CommanderOrder;
+_jipDoctrineGroup setVariable ["Vcm_Disable",true,true];
+deleteVehicle _jipDoctrineUnit; deleteGroup _jipDoctrineGroup;
 
 if (missionNamespace getVariable ["VCM_MP_AdvancedOnly",false]) exitWith {
     private _opfor = createGroup [east,true];

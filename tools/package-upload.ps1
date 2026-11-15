@@ -15,7 +15,7 @@ foreach ($module in $project.modules) {
     if (-not (Get-ChildItem -LiteralPath (Join-Path $mod 'addons') -Filter ($pboName + '.*.bisign'))) { throw ('Missing signature: ' + $pboName) }
 }
 # Refresh documentation without rebuilding or changing the validated PBO and its signature.
-foreach ($name in @('MIGRATION.md','ROADMAP.md','FEATURES.md')) {
+foreach ($name in @('MIGRATION.md','ROADMAP.md','FEATURES.md','COMMANDS.md')) {
     Copy-Item -LiteralPath (Join-Path $repository $name) -Destination (Join-Path $mod $name) -Force
 }
 $files = @(Get-ChildItem -LiteralPath $mod -Recurse -File -Force | Where-Object { $_.Name -ne 'BUILD-MANIFEST.json' })

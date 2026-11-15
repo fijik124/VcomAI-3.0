@@ -6,6 +6,8 @@ param(
     [switch]$Addon
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'required-mods.ps1')
+$Mods = @(Resolve-VcomTestMods -ArmaDirectory $ArmaDirectory -Mods $Mods)
 $prepareArguments = @((Join-Path $PSScriptRoot 'prepare-multiplayer.mjs'))
 if ($AdvancedOnly) { $prepareArguments += '--advanced-only' }
 if ($Addon) {
@@ -14,7 +16,7 @@ if ($Addon) {
     foreach ($module in $project.modules) {
         if (-not (Test-Path -LiteralPath (Join-Path $addonMod ('addons/' + $project.prefix + '_' + $module.id + '.pbo')))) { throw ('Build missing PBO: ' + $module.id) }
     }
-    $Mods = @($addonMod) + $Mods
+    $Mods += $addonMod
     $prepareArguments += '--addon'
 }
 & node @prepareArguments

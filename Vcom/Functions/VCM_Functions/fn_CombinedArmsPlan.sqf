@@ -1,7 +1,7 @@
 /* Separate local infantry and AI vehicle groups cooperate without replacing authored routes. */
 params ["_group"];
 _group setVariable ["VCM_EscortPlanReason","eligibility"];
-if (!VCM_COMBINEDARMS || {!([_group] call VCM_fnc_TacticalReady)} ||
+if (!VCM_COMBINEDARMS || {!([_group] call VCM_fnc_Autonomy)} || {!([_group] call VCM_fnc_TacticalReady)} ||
     {diag_tickTime < (_group getVariable ["VCM_EscortAfter",-1])}) exitWith {[]};
 private _enemy = leader _group call VCM_fnc_ClstEmy;
 _group setVariable ["VCM_EscortPlanReason","contact"];

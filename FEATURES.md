@@ -1,6 +1,22 @@
-# VCOM Edited by Fijik 3.6.0 feature guide
+# VCOM Edited by Fijik 3.8.0 feature guide
 
-This update targets Arma 3 2.22 or newer. CBA and ACE are optional. Existing medical, rearming, static weapons, mines, formation, vehicle use and artillery functions remain available.
+This update targets Arma 3 2.22 or newer and requires CBA_A3 and ACE including ACE Medical on every machine. Existing casualty evacuation, rearming, static weapons, mines, formation, vehicle use and artillery functions remain available.
+
+## Tactical orders and doctrine in 3.8.0
+
+Six additional systems are implemented: counter-flanking against remembered lateral contacts; recon posts and position-only radio reports; night flashlight/IR/hand-flare discipline; spaced defenses and fallback points; default/recon/assault/defend/convoy doctrine; and bounded memory of observed fire, casualties and failed outdoor movement.
+
+All six behaviors operate autonomously. AI selects recon, assault, defense or convoy preferences from remembered contacts, strength, pressure and equipment, with bounded reconsideration. Eight optional modules under **Zeus > VCOM Tactics** supply explicit objectives, fallback/danger overrides and resets. Five Eden-only presets support authored missions. The server validates remote curator identity and editable squads. Point data is synchronized for joining clients; owners execute their own movement. Local tactical markers are visible only in an authorized curator's interface. Mission orders and group opt-outs retain priority.
+
+See [COMMANDS.md](COMMANDS.md) for setup, exact module actions, defaults, reset semantics, mission-script examples and practical limits. CBA exposes feature switches, flank thresholds, report range/interval, point deadlines, night permissions and memory bounds. Attachment and per-unit engagement changes use owned restoration records. Tactical reservation and point context are acquired together to prevent concurrent planners from claiming the same soldiers.
+
+## Required dependencies in 3.7.0
+
+The core PBO requires `cba_main`, `cba_settings`, `ace_main`, `ace_medical` and `ace_medical_engine`. The mission-script installation checks the same dependencies and exits with an RPT error if any are missing. Use a complete ACE installation with Medical enabled.
+
+CBA settings always register. The optional-CBA detection and `VCM_USECBASETTINGS` bypass are removed. Optional userconfig startup defaults still support advanced skill/config arrays; they do not bypass CBA, and saved CBA settings take priority.
+
+ACE Medical owns wounds, treatment and hit reactions. The unused vanilla treatment functions, stance reactions, medic inventory scan and related settings have been removed. VCOM casualty evacuation uses one opt-in setting, `VCM_CASEVAC=false` by default. The redundant `VCM_ACECASEVAC` compatibility switch is removed. Review saved `VCM_CASEVAC` settings when upgrading; an existing saved value of true enables evacuation.
 
 ## Full mapped room search in 3.6.0
 
@@ -25,7 +41,7 @@ Existing saved `VCM_CQBROOMS` values remain in effect. A saved value of eight no
 
 ## New controls and debugger
 
-With CBA loaded, open **Options > Addon Options > VCOM Edited by Fijik**. Feature flags and numeric controls are server/mission settings. Each feature can be disabled independently. Sliders cover recovery delays/retries/radius, grenade clearance, smoke cooldown, room count/deadline, anti-tank range/reservation, coordination radius/cooldown, planning budget/intervals, casualty distances, convoy gap/speed and retreat thresholds/deadlines. Exact defaults and limits are maintained in [fn_FeatureSettings.sqf](Vcom/Functions/VCM_Functions/fn_FeatureSettings.sqf). Saved CBA values take priority through CBA's normal server/mission setting rules. Defaults also work without CBA; the same variables are available in the supplied userconfig.
+Open **Options > Addon Options > VCOM Edited by Fijik**. Feature flags and numeric controls are server/mission settings. Each feature can be disabled independently. Sliders cover recovery delays/retries/radius, grenade clearance, smoke cooldown, room count/deadline, anti-tank range/reservation, coordination radius/cooldown, planning budget/intervals, casualty distances, convoy gap/speed and retreat thresholds/deadlines. Exact defaults and limits are maintained in [fn_FeatureSettings.sqf](Vcom/Functions/VCM_Functions/fn_FeatureSettings.sqf). Saved CBA values take priority through CBA's normal server/mission setting rules. The supplied userconfig can seed startup defaults with server file patching enabled.
 
 To enable the debugger:
 
@@ -59,10 +75,10 @@ Collection stops when server debugging is disabled. Publication uses the existin
 | Multi-squad roles | `VCM_MULTISQUAD=true`, `VCM_COORDRANGE=500`, `VCM_COORDCOOLDOWN=45` | Server assigns at most three nearby ready radio-equipped squads assault, support and flank roles. Each owner executes bounded local movement/support tasks. |
 | Cross-owner escorts | `VCM_CROSSOWNER_ESCORT=true`, plus `VCM_COMBINEDARMS` | Server leases a nearby friendly ground vehicle to an infantry group on another owner. Separate jobs stage the vehicle, screen it and unload eligible stationary passengers without changing ownership. New routes or expired leases cancel cooperation. |
 | Adaptive planning | `VCM_ADAPTIVEBUDGET=true`, `VCM_BUDGETMS=3`, `VCM_NEARTICK=2`, `VCM_FARTICK=12`, `VCM_ACTIVEDISTANCE=800` | Distant idle groups plan less often. A soft per-owner/frame budget defers planning; hit/fire events wake quiet groups. Safety, binding and cleanup retain their own update rates. |
-| Casualty evacuation | `VCM_CASEVAC=true`, `VCM_EVACRANGE=40`, `VCM_EVACDISTANCE=15` | A local AI rescuer can approach an unconscious squadmate and carry it toward a nearby position scoring better physical cover. Attachments and walking speed are restored on release/handoff. Medical state and supplies are unchanged. |
+| Casualty evacuation | `VCM_CASEVAC=false`, `VCM_EVACRANGE=40`, `VCM_EVACDISTANCE=15` | When enabled, a local AI rescuer can approach an unconscious squadmate and carry it toward a nearby position scoring better physical cover. Attachments and walking speed are restored on release/handoff. Medical state and supplies are unchanged. |
 | Convoy control | `VCM_CONVOY=true`, `VCM_CONVOYGAP=25`, `VCM_CONVOYSPEED=45` | Groups with at least two AI ground vehicles retain their route, apply spacing/speed caps, wait for nearby non-hostile pedestrians and use bounded detours when stalled. Prior mission speed limits are preserved on release. |
 
-Distances are meters, times are seconds, and convoy speed is km/h. ACE casualty evacuation requires explicit `VCM_ACECASEVAC=true`; it defaults false. It uses owned native attachments and reads ACE unconsciousness, without calling ACE's private drag functions or performing treatment. Mission-specific ACE interaction remains an acceptance case.
+Distances are meters, times are seconds, and convoy speed is km/h. Casualty evacuation requires `VCM_CASEVAC=true`; it defaults false. It uses owned native attachments and reads ACE unconsciousness, without calling ACE's private drag functions or performing treatment. Mission-specific ACE interaction remains an acceptance case.
 
 Grenade prediction uses a short gravity-only trajectory and snapshot friendly checks. Modded drag, fuses, penetration, geometry and units moving into the blast area can differ. Smoke selection recognizes non-lethal native smoke simulations with a configured smoke effect; custom effects without a smoke name need explicit mod acceptance. Legacy room progression follows configured `buildingPos` points; full mode expands those into a geometry-derived search graph. Native pathfinding and model geometry still determine which areas can be reached and observed. The planning budget is soft and establishes no guaranteed FPS increase.
 
@@ -105,7 +121,7 @@ All feature toggles above are synchronized server settings and CBA checkboxes. E
 - Mine simulation remains native. Empty registries return immediately; registry pruning runs once per second. Expired support-request records are periodically removed.
 - Searches, support pulses, moves and tasks have bounded work or deadlines. No new per-frame global entity scanner is installed.
 
-Run `./tests/run-performance.ps1 -Addon` for sequential VCOM-off/on measurements using the same 128-unit VR combat setup. It records mean FPS, 10th-percentile FPS, active script counts and cleanup checks in `build/performance.csv`. This is a repeatable stress smoke test, not a guarantee for another map, modset or long campaign. Use `-Seconds 1800` for a 30-minute measurement of each variant.
+Run `./tests/run-performance.ps1 -Addon` for sequential VCOM-off/on measurements using the same 128-unit VR combat setup and required CBA/ACE stack in both variants. It records mean FPS, 10th-percentile FPS, active script counts and cleanup checks in `build/performance.csv`. This is a repeatable stress smoke test, not a guarantee for another map, modset or long campaign. Use `-Seconds 1800` for a 30-minute measurement of each variant.
 
 The final 3.6.0 benchmark averaged 28.62 server FPS disabled and 28.81 enabled over approximately 61 seconds per variant on November 8, 2026. All 16 enabled squad controllers shut down cleanly, with no duplicated controllers or unrestored native AI flags. FPS remained similar; this short VR run does not establish a speedup or measure sustained building-search load. The eight-PBO layout itself establishes no FPS increase. See [MIGRATION.md](MIGRATION.md) for current and historical verification results and log locations.
 
@@ -115,4 +131,4 @@ The final 3.6.0 benchmark averaged 28.62 server FPS disabled and 28.81 enabled o
 
 For a mission with restrictive remote-execution settings, merge the supplied `REMOTE-EXEC.hpp` declarations. The addon does not replace another mod's global remote-execution policy. See [MIGRATION.md](MIGRATION.md) for mission-script installation, legacy settings and validation results.
 
-After validating the PBOs, run `./tools/package-upload.ps1` to create `build/upload/VCOM_Edited_by_Fijik-3.6.0.zip` and its SHA-256 checksum. Documentation refreshes without rebuilding or changing the tested PBOs and signatures. The eight-PBO layout provides separate files for maintenance and updates.
+After validating the PBOs, run `./tools/package-upload.ps1` to create `build/upload/VCOM_Edited_by_Fijik-3.8.0.zip` and its SHA-256 checksum. Documentation refreshes without rebuilding or changing the tested PBOs and signatures. The eight-PBO layout provides separate files for maintenance and updates.

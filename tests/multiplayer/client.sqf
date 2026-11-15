@@ -1,6 +1,6 @@
 if (isServer || {hasInterface}) exitWith {};
 waitUntil {sleep 0.1; !isNull player && {missionNamespace getVariable ["VCM_SettingsReady", false]} &&
-    {missionNamespace getVariable ["VCM_Started", false]} && {VCM_CBAReady}};
+    {missionNamespace getVariable ["VCM_Started", false]} && {missionNamespace getVariable ["VCM_CBARegistered",false]}};
 sleep 2;
 ["joined"] call VCM_test_fnc_Probe;
 // Attempt an actual forged settings RPC. The product receiver must reject HC-originated data.

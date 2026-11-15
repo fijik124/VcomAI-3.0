@@ -1,6 +1,7 @@
 /* Author: Genesis. Movement never replaces mission waypoints or disables AI targeting. */
 params ["_leader", ["_distance", 100]];
 private _group = group _leader;
+if (!([_group] call VCM_fnc_Autonomy)) exitWith {};
 if (!VCM_ADVANCEDMOVEMENT) exitWith {};
 if (_group getVariable ["VCM_BoundState", []] isNotEqualTo []) exitWith {};
 if (_group getVariable ["VCM_Task", []] isNotEqualTo []) exitWith {};

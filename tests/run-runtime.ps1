@@ -2,13 +2,19 @@ param(
     [string]$ArmaDirectory = "${env:ProgramFiles(x86)}/Steam/steamapps/common/Arma 3",
     [int]$TimeoutSeconds = 300,
     [string[]]$Mods = @(),
-    [ValidateSet('all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors')][string]$Suite = 'all',
+    [ValidateSet('all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors','dependencies','doctrine')][string]$Suite = 'all',
     [switch]$Addon,
     [ValidateRange(30,1800)][int]$PerformanceSeconds = 60,
     [switch]$Vanilla
 )
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'required-mods.ps1')
+if ($Suite -eq 'dependencies') {
+    if ($Addon) { throw 'Missing-dependency checks use mission-script mode; the engine enforces addon dependencies.' }
+} else {
+    $Mods = @(Resolve-VcomTestMods -ArmaDirectory $ArmaDirectory -Mods $Mods)
+}
 $testWorld = if ($Suite -eq 'cqb-floors') { 'Altis' } else { 'VR' }
 $prepareArguments = @((Join-Path $PSScriptRoot 'prepare-runtime.mjs'),$Suite)
 if ($Suite -eq 'performance') { $prepareArguments += ('--duration=' + $PerformanceSeconds); $TimeoutSeconds = [Math]::Max($TimeoutSeconds,$PerformanceSeconds + 60) }
@@ -19,7 +25,7 @@ if ($Addon) {
     foreach ($module in $project.modules) {
         if (-not (Test-Path -LiteralPath (Join-Path $addonMod ('addons/' + $project.prefix + '_' + $module.id + '.pbo')))) { throw ('Build missing PBO: ' + $module.id) }
     }
-    $Mods = @($addonMod) + $Mods
+    $Mods += $addonMod
     $prepareArguments += '--addon'
 }
 & node @prepareArguments

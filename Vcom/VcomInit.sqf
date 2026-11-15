@@ -1,11 +1,10 @@
 if (missionNamespace getVariable ["VCM_Started", false]) exitWith {};
+if (!([] call VCM_fnc_InitSettings)) exitWith {};
 VCM_Started = true;
-[] call VCM_fnc_InitSettings;
 // Addon preInit can run before CBA recreates its event namespace. Poll readiness so
 // startup also works after the initialized event has already fired on a joining client.
-waitUntil {sleep 0.05; VCM_CBAReady || {missionNamespace getVariable ["cba_settings_ready",false]}};
-VCM_CBAReady = true;
-if (CBAACT) then {[] call VCM_fnc_CBASettings};
+waitUntil {sleep 0.05; missionNamespace getVariable ["cba_settings_ready",false]};
+[] call VCM_fnc_CBASettings;
 if (isServer) then {VCM_ServerReady = true; [] spawn VCM_fnc_IRCHECK};
 if (!isServer) then {
     private _nextRequest = -1;
@@ -47,6 +46,7 @@ if (hasInterface) then {
                 };
             } forEach ([player,remoteControlled player] arrayIntersect [player,remoteControlled player]);
             [] call VCM_fnc_DebugUI;
+            [] call VCM_fnc_CuratorUI;
             sleep 0.5;
         };
     };

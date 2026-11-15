@@ -12,6 +12,8 @@ class CfgRemoteExec
 		mode = 1;
 		jip = 0;
 		class VCM_fnc_RequestSettings { allowedTargets = 2; jip = 0; };
+		class VCM_fnc_CommanderRequest { allowedTargets = 2; jip = 0; };
+		class VCM_fnc_ReconReport { allowedTargets = 2; jip = 0; };
 		class VCM_fnc_SupportRequest { allowedTargets = 2; jip = 0; };
 		class VCM_fnc_CoordRequest { allowedTargets = 2; jip = 0; };
 		class VCM_fnc_TeamAssign { allowedTargets = 1; jip = 0; };

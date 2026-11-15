@@ -1,5 +1,25 @@
 # VCOM Edited by Fijik roadmap
 
+## Tactical orders and doctrine in 3.8.0
+
+- Counter-flanking based on native remembered contacts, with bounded repositioning and covering soldiers.
+- Recon observation posts, temporary return-fire restrictions and server-relayed reports containing observed positions.
+- Night discipline for equipped flashlights/IR lasers and real carried hand flares; no equipment spawning.
+- Spaced defensive positions, watch sectors and separate fallback assignments used by tactical withdrawal.
+- Autonomous per-squad recon, assault, defend and convoy doctrine selection; optional Eden presets for mission authors.
+- Bounded, expiring danger memory influencing outdoor destination scoring.
+- Eight optional Zeus modules for objective/fallback/danger overrides, point restart/removal, local danger reset and return to autonomous decisions. Curator-only local markers and server-validated requests.
+
+Detailed controls and reset semantics are in [COMMANDS.md](COMMANDS.md). Remaining acceptance includes graphical Zeus selection/markers, more buildings/terrains, modded equipment, remote player clients and long-mission performance.
+
+## Required CBA/ACE stack in 3.7.0
+
+- Require CBA_A3 and ACE including ACE Medical on all machines, enforced by core PBO dependencies and mission-script startup checks.
+- Always register CBA settings; remove optional-CBA detection and the CBA bypass switch.
+- Remove unused vanilla treatment, stance reactions, medic scans and related settings. Retain ACE casualty evacuation as an opt-in behavior.
+- Run normal native tests with the required stack, plus negative mission-script startup checks with dependencies absent.
+- Recheck the remaining graphical, remote-client and long-mission acceptance scenarios below with CBA/ACE loaded.
+
 ## AI decision debugger in 3.6.0
 
 - Show each group's recorded VCOM action, native commands, roles, remembered threat and reason for choosing its plan.
@@ -65,7 +85,7 @@ See [FEATURES.md](FEATURES.md) for settings, thresholds, installation and practi
 
 - Visual review of the debugger labels, routes, room/door markers and panel on a graphical player client.
 - Complete traversal of more terrain and modded buildings, especially large barracks and unusual floor/door models.
-- Graphical player clients joining from another computer, with and without CBA/ACE.
+- Graphical player clients joining from another computer with required CBA/ACE loaded.
 - Zeus spawning, leader changes and direct player control.
 - Mission-specific medical, rearming, transport and artillery cases.
 - At least 30 minutes of large-battle performance measurement against a matching baseline.

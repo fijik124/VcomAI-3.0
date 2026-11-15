@@ -1,6 +1,6 @@
 /* Server-side eligibility does not assume the group is local. Owners revalidate before acting. */
 params ["_group"];
-!isNull _group && {alive leader _group} && {side _group in VCM_SIDEENABLED} &&
+!isNull _group && {alive leader _group} && {side _group in VCM_SIDEENABLED} && {[_group] call VCM_fnc_Autonomy} &&
 {!(isPlayer leader _group)} && {!(_group getVariable ["Vcm_Disable",false])} &&
 {!(_group getVariable ["VCM_NOFLANK",false])} && {!(_group getVariable ["VCM_NORESCUE",false])} &&
 {!(_group getVariable ["VCM_Committed",false])} &&

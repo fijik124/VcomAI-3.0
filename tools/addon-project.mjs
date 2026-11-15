@@ -47,6 +47,11 @@ export function addonChecks() {
 export function addonAssertions() {
   // This file runs inside the native test's scheduled scope with its real assertion function.
   return `{
+    [isClass (configFile >> "CfgPatches" >> _x),format ["required addon %1 is loaded",_x]] call _assert;
+    [_x in getArray (configFile >> "CfgPatches" >> "${project.prefix}_core" >> "requiredAddons"),
+        format ["core declares required addon %1",_x]] call _assert;
+} forEach ${sqfLiteral(project.requiredAddons)};
+{
     _x params ["_patch","_category","_directory","_functions"];
     [isClass (configFile >> "CfgPatches" >> _patch),format ["addon module %1 is loaded",_patch]] call _assert;
     [getText (configFile >> "CfgFunctions" >> "VCOM" >> _category >> "file") == _directory,
@@ -56,5 +61,9 @@ export function addonAssertions() {
 [getText (configFile >> "CfgFunctions" >> "VCOM" >> "FSM" >> "file") == "${virtualRoot('squad')}\\fsm",
     "squad FSM resolves from the squad PBO"] call _assert;
 [missionNamespace getVariable ["VCM_Started",false],"main PBO starts the complete mod"] call _assert;
+{
+    [isClass (configFile >> "CfgVehicles" >> _x) && {getNumber (configFile >> "CfgVehicles" >> _x >> "scope") == 2},
+        format ["tactical module %1 is registered",_x]] call _assert;
+} forEach ${sqfLiteral(project.modules.flatMap(module => module.units || []))};
 `;
 }

@@ -2,7 +2,7 @@
 VCM_MULTISQUAD = true;
 VCM_CROSSOWNER_ESCORT = true;
 VCM_COMBINEDARMS = true;
-VCM_ACECASEVAC = true;
+VCM_CASEVAC = true;
 VCM_CoordTimes = createHashMap;
 VCM_Debug = true;
 sleep 2;
@@ -129,7 +129,7 @@ private _ready = [{count ([_clearGroup] call VCM_fnc_TacticalUnits) >= 4 &&
     {([leader _clearGroup,_clearEnemy] call VCM_fnc_ContactPosition) isNotEqualTo []}},6] call _await;
 diag_log format ["VCM_CQB_MP_READY: ready=%1 eligible=%2 plan=%3 flags=%4 units=%5",_ready,count ([_clearGroup] call VCM_fnc_TacticalUnits),
     ([_clearGroup,_clearEnemy] call VCM_fnc_ClearBuildingPlan) isNotEqualTo [],[VCM_BUILDINGCLEARING,VCM_FULLCLEAR,VCM_CQBSECTORS],
-    _clearUnits apply {[currentCommand _x,_x getVariable ["VCM_MoveKey",[]],_x getVariable ["VCM_MBUSY",false]]}];
+    _clearUnits apply {[currentCommand _x,_x getVariable ["VCM_MoveKey",[]]]}];
 [_clearGroup,_clearEnemy] spawn VCM_fnc_ClearBuilding;
 private _clearing = [{((_clearGroup getVariable ["VCM_CQBProgress",[]]) param [3,-1]) >= 0},40] call _await;
 [_ready && {_clearing},"full room search is physically active before ownership transfer"] call _assert;
@@ -145,4 +145,5 @@ private _clearState = (_clearProbe param [3,[]]) param [0,[]];
 _clearGroup setVariable ["Vcm_Disable",true,true]; sleep 0.5;
 {deleteVehicle _x} forEach (_clearUnits + [_clearHouse,_clearEnemy]);
 deleteGroup _clearGroup;
+[] call compile preprocessFileLineNumbers "mp\doctrine.sqf";
 VCM_Debug = false;

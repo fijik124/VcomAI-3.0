@@ -5,7 +5,15 @@ The additional behaviors, settings, performance work and addon installation are 
 
 This repository contains VCOM Edited by Fijik as a modular addon and compatible mission scripts. For the mission-script installation, copy `Vcom/` into the mission, include `Vcom/cfgFunctions.hpp` inside `CfgFunctions`, and execute `Vcom/VcomInit.sqf` once from mission `init.sqf`. Merge the supplied `CfgRemoteExec` with the mission's existing configuration. Do not replace other mods' required remote-function declarations.
 
-Version 3.6.0 installs as `@VCOM_Edited_by_Fijik` and contains eight signed PBOs. Remove older VCOM folders before enabling it, including the previous single-PBO `@VCOM_AI` edition. Keep every PBO in the new folder: the main addon declares dependencies on all seven implementation modules. Settings IDs, `VCM_fnc_*` calls and `userconfig/VCOM_AI` remain compatible. Original author credit for Genesis is retained; the launcher and CBA category identify this edition as VCOM Edited by Fijik. See [README.md](README.md) for the module map.
+Version 3.8.0 installs as `@VCOM_Edited_by_Fijik` and contains eight signed PBOs. **CBA_A3 and ACE including ACE Medical are required on the server, headless clients and player clients.** Load them before VCOM. The core PBO declares `cba_main`, `cba_settings`, `ace_main`, `ace_medical` and `ace_medical_engine` as dependencies. Mission-script startup checks the same patches and logs an error before exiting if any are missing.
+
+Version 3.8.0 adds autonomous tactical roles, recon, counter-flanking, night equipment discipline, defensive posts and bounded danger memory. No Zeus setup is required for those behaviors. Eight optional Zeus point/reset modules support mission-specific objectives and corrections; five Eden-only doctrine presets remain available to mission authors. Resetting a squad returns it to automatic decisions. See [COMMANDS.md](COMMANDS.md) for controls, server API and practical limits. Missions with restrictive remote-execution policies must merge the updated declarations for `VCM_fnc_CommanderRequest` and `VCM_fnc_ReconReport`.
+
+Remove older VCOM folders before enabling it, including the previous single-PBO `@VCOM_AI` edition. Keep every PBO in the new folder: the main addon declares dependencies on all seven implementation modules. Original author credit for Genesis is retained; the launcher and CBA category identify this edition as VCOM Edited by Fijik. See [README.md](README.md) for the module map.
+
+The optional-CBA detection and `VCM_USECBASETTINGS` switch are removed. CBA settings always register. ACE owns medical treatment and hit reactions: `VCM_fnc_HealSelf`, `VCM_fnc_MedicHeal`, `VCM_fnc_MedicalHandler`, `VCM_fnc_AIHIT`, `VCM_fnc_RMedics`, `VCM_fnc_KitChk`, `VCM_RAGDOLL` and `VCM_RAGDOLLCHC` have been removed. Missions that call these functions must remove those calls. No replacement vanilla treatment is provided.
+
+Casualty evacuation now has one opt-in, `VCM_CASEVAC`, defaulting to false. The redundant `VCM_ACECASEVAC` setting is removed. Review saved CBA settings on upgrade: a previously saved `VCM_CASEVAC=true` enables evacuation without the former second gate. To keep evacuation disabled, save `VCM_CASEVAC=false`; to retain previously enabled evacuation, save true.
 
 ## Changes
 
@@ -13,7 +21,7 @@ Version 3.6.0 installs as `@VCOM_Edited_by_Fijik` and contains eight signed PBOs
 - VCOM names its temporary waypoints. Cleanup removes only those waypoints and restores the pre-combat speed mode. Autonomous flanking, transport and forced movement leave authored routes alone.
 - Enemy selection returns `objNull` when no hostile contact is known. Maneuvers and artillery use the observer's estimated contact position from `nearTargets`.
 - Garrisoning keeps native pathfinding enabled. Soldiers receive distinct positions. Approaches time out and HOLD cancellation releases the behavior.
-- Medical actions defer to native treatment and supplies. When ACE Medical is loaded, VCOM does not issue vanilla treatment or force unconsciousness. The legacy ragdoll option now controls a temporary stance reaction only.
+- ACE Medical owns treatment and unconsciousness. VCOM only supplies optional casualty evacuation, preserving medical state and supplies.
 - Settings compile locally during preInit. Only whitelisted, typed settings data is synchronized from the server. Arrays are checked recursively; CODE is rejected. JIP clients request a snapshot and receive subsequent updates. Headless-client requests resolve the reply destination from their connected `HeadlessClient_F` object because the engine reports those RPCs with [sender ID zero](https://community.bohemia.net/wiki/remoteExecutedOwner). Replies never target ID zero, which would broadcast them. Regular player requests use the engine-provided sender ID. CBA registration is synchronous and runs once.
 - Remote gunfire reports are checked against shooter ownership and rate-limited. Knowledge updates originate on the server and target the machines owning listeners. Laser observations no longer transmit executable code.
 - Artillery filters known hostiles, chooses supported HE ammunition separately for each local firing vehicle, checks range and checks for nearby non-hostiles at the proposed impact point.
@@ -54,7 +62,7 @@ This feature selects destinations during coordinated advances. It does not force
 
 ## Settings
 
-The existing `userconfig/VCOM_AI/AISettingsV3.hpp` remains a server-side option with file patching enabled. Set `VCM_USECBASETTINGS = false` there to use file values instead of registering CBA settings. This is a startup choice; restart the mission after changing it.
+The existing `userconfig/VCOM_AI/AISettingsV3.hpp` remains a server-side source of startup defaults with file patching enabled, including advanced skill/config arrays. CBA settings always register and saved CBA values take priority. Restart the mission after changing startup defaults. The old CBA bypass switch has no effect and should be removed from custom files.
 
 The old `VCM_ForceSpeed` CBA setting name remains supported. Runtime code continues to use `VCM_FullSpeed`. CBA sets side-list values directly; those values must be flat arrays such as `[west, east, resistance]`.
 
@@ -89,17 +97,26 @@ Run the native regression mission with an installed Arma 3 dedicated-server exec
 
 The runner binds to `127.0.0.1:2392`, copies a uniquely named test mission into the game's `MPMissions`, starts a hidden server, collects RPT assertions and stops its own process. It removes that temporary mission afterward. Logs remain under `build/runtime`. The game directory must be writable for the temporary mission installation.
 
-Optional CBA/ACE validation uses the same assertions:
+Normal native runners automatically load the installed Steam Workshop CBA/ACE folders. For another installation, supply both required mod paths:
 
 ```powershell
 ./tests/run-runtime.ps1 -Mods @('C:/path/to/@CBA_A3', 'C:/path/to/@ace')
 ```
 
-The native environment is Arma 3 2.22.154126, Windows x64 (the installed executable reports profiling binaries). Optional mod validation uses the installed CBA 3.19.0.260808 and ACE 3.21.2.113.
+The current native environment is Arma 3 2.22.154191, Windows x64 (the installed executable reports profiling binaries), with CBA 3.19.0.260808 and ACE 3.21.2.113. Historical November 8 results below used 2.22.154126.
 
-The expanded native suite checks actual coordinated advances, physical cover selection, infantry and mounted firing safety, real indoor/outdoor grenade throws, inventory conservation, phased retreat, reactive support, building entry, transport unloading and cancellation by new mission orders. Default coordinated advances are 10 meters with a 15-second deadline. Movement assertions require actual travel and both teams completing their phases; no teleporting or simulated locality flags are used. Modular-addon checks also inspect all eight patches, function directories, compiled functions and the squad FSM path. HEMTT compiles 227 SQF files, including 106 extracted FSM clauses and the multiplayer test scripts. The installation emits a startup warning about `a3_characters_f`; it does not prevent the regression missions from completing.
+The expanded native suite checks actual coordinated advances, physical cover selection, infantry and mounted firing safety, real indoor/outdoor grenade throws, inventory conservation, phased retreat, reactive support, building entry, transport unloading and cancellation by new mission orders. Default coordinated advances are 10 meters with a 15-second deadline. Movement assertions require actual travel and both teams completing their phases; no teleporting or simulated locality flags are used. Modular-addon checks also inspect all eight patches, their required dependencies, function directories, compiled functions and the squad FSM path. HEMTT compiles 292 SQF files, including 106 extracted FSM clauses and the multiplayer test scripts. The installation emits a startup warning about `a3_characters_f`; it does not prevent the regression missions from completing.
 
 Use `-Addon` to validate the built PBO rather than an embedded mission-script copy. For example, `./tests/run-runtime.ps1 -Addon`. Addon-mode test missions contain no VCOM implementation files. Focused suites are available through `-Suite safety`, `-Suite tactics` and `-Suite vehicle`.
+
+Missing-dependency acceptance runs in mission-script mode and deliberately skips automatic mod loading:
+
+```powershell
+./tests/run-runtime.ps1 -Suite dependencies
+./tests/run-runtime.ps1 -Suite dependencies -Mods @('C:/path/to/@CBA_A3')
+```
+
+Each negative test requires absent dependencies, rejected initialization, a completed startup script and no partially initialized AI runtime. The addon dependency declarations are inspected by normal addon tests.
 
 Run the dedicated-server/headless-client regression separately:
 
@@ -112,9 +129,36 @@ This runner starts one server and two headless clients using the installed dedic
 
 The multiplayer suite covers two headless clients joining in progress, typed settings, live updates, forged-update rejection, and ownership transfers during garrisoning, movement, static deployment, coordinated movement and tactical retreat. It verifies reinforcement and real mortar fire across different HC owners, indoor grenade inventory conservation through handoff, outdoor restoration, and controller recovery after disconnect. It checks that the old owner releases its controller, the new owner runs one controller with a fresh token, inherited reservations clear, pathfinding stays enabled, cancelled deployment preserves its backpack, and authored waypoints survive. Use `./tests/run-multiplayer.ps1 -Addon` to exercise the signed PBO on all three processes.
 
-Run `./tests/run-performance.ps1 -Addon` for matched 128-unit VR combat measurements with VCOM disabled and enabled. The report records mean FPS, 10th-percentile FPS, maximum active SQF scripts and cleanup assertions in `build/performance.csv`. Default measurement time is 60 seconds per variant, following a 15-second warmup. Use `-Seconds 1800` for 30 minutes per variant. This smoke benchmark does not replace campaign or map-specific measurements.
+Run `./tests/run-performance.ps1 -Addon` for matched 128-unit VR combat measurements with VCOM disabled and enabled. Both variants load required CBA/ACE. The report records mean FPS, 10th-percentile FPS, maximum active SQF scripts and cleanup assertions in `build/performance.csv`. Default measurement time is 60 seconds per variant, following a 15-second warmup. Use `-Seconds 1800` for 30 minutes per variant. This smoke benchmark does not replace campaign or map-specific measurements.
 
-### Room search in 3.6.0
+### Tactical doctrine verification in 3.8.0, November 14–15, 2026
+
+Static validation compiles 292 SQF files, including 106 extracted FSM clauses, with zero errors and 395 advisory warnings. Release generation compiles 161 SQF files and eight addon configs. All 158 staged implementation functions, startup, defaults, the squad FSM and module definitions match the current source. All eight signed PBOs match the release output. Native checks use the required CBA/ACE stack and engine versions listed above.
+
+| Scenario | Result | Workspace logs |
+| --- | --- | --- |
+| Autonomous doctrine, native movement, recon, defense, fallback and carried night equipment | 95 checks, zero failures | `build/runtime/profiles-20261114-205402` |
+| Full signed-addon regression with CBA/ACE | 193 checks, zero failures | `build/runtime/profiles-20261114-205707` |
+
+The doctrine suite requires AI-selected recon and defense without Zeus setup, native travel to assigned positions, cancellation by authored routes, remembered-contact reports, return-fire policy cleanup, real equipped flashlight/IR-laser behavior and a native hand-flare projectile consuming carried ammunition. Earlier development runs exposed movement and night-equipment fixture failures. Multiplayer validation also caught two request gates that incorrectly relied on `isRemoteExecuted`, which is false for native HC-origin traffic with sender zero. Remote commander requests now require an authenticated curator, while server scripts use the non-whitelisted `VCM_fnc_CommanderOrder`. Remote reports validate their source owner independently of that flag; server-local distribution uses the non-whitelisted `VCM_fnc_ReconPublish`. Null identities cannot select the trusted server path. Graphical Zeus selection, marker/module placement, remote player clients, more terrain/modded buildings and sustained mission performance remain acceptance work.
+
+### Required-stack verification in 3.7.0, November 14, 2026
+
+Static validation compiles 267 SQF files, including 106 extracted FSM clauses, with zero errors and 308 advisory warnings. Release generation compiles 139 SQF files and eight addon configs, producing eight signed PBOs. Native checks use Arma 3 2.22.154191, CBA 3.19.0.260808 and ACE 3.21.2.113 unless dependencies are deliberately omitted.
+
+| Scenario | Result | Workspace logs |
+| --- | --- | --- |
+| Mission-script startup with no CBA/ACE | 6 checks, zero failures | `build/runtime/profiles-20261114-190032` |
+| Mission-script startup with CBA only | 6 checks, zero failures | `build/runtime/profiles-20261114-190214` |
+| Full signed-addon regression with CBA/ACE | 180 checks, zero failures | `build/runtime/profiles-20261114-190424` |
+| Expanded features, CBA controls and evacuation with CBA/ACE | 94 checks, zero failures | `build/runtime/profiles-20261114-190747` |
+| Full server/two-HC regression with CBA/ACE | 133 checks, zero failures | `build/multiplayer/run-20261114-190914` |
+
+The normal addon assertions verify every required patch is loaded and explicitly listed by the core PBO. The negative fixtures verify startup exits without creating partial runtime state. Regression checks confirm the deleted treatment/hit-reaction functions are absent. Expanded checks verify the obsolete ACE evacuation switch is unregistered, the single evacuation switch defaults off, and enabled evacuation physically moves a casualty toward cover without healing or waking it. Multiplayer checks cover live settings, both joining HCs, cross-owner support, casualty and building-search handoffs, and recovery after disconnect. All eight PBO signatures verify against the supplied `vcm_3.7.0.bikey` public key.
+
+Historical performance and building-search results below describe earlier builds. The remaining graphical, remote-player and long-mission acceptance scenarios still apply to the required CBA/ACE stack.
+
+### Historical room-search verification in 3.6.0
 
 Full search uses sampled indoor floor areas, configured doors, explicit room membership and observed coverage. Door probes are navigation anchors, not additional mandatory search points. A door-only threshold component does not become a room. Each searched room requires physical entry on its floor and unobstructed observation of its mapped points. Inaccessible or limited layouts produce partial reports. The controller does not certify that hidden enemies are absent.
 
@@ -213,10 +257,10 @@ Both variants passed all three cleanup assertions: no duplicate controllers, no 
 
 The automated suite covers local headless clients. These broader acceptance checks remain:
 
-1. Join a running mission with a graphical player client on another computer, with CBA enabled and disabled. Check that side arrays, skill arrays and activation state match the server. Change a server setting and verify it reaches the joining client.
+1. Join a running mission with a graphical player client on another computer, with required CBA/ACE loaded. Check that side arrays, skill arrays and activation state match the server. Change a server setting and verify it reaches the joining client.
 2. Repeat ownership handoffs on a networked server with mission-specific rearming, transport and support tasks. The local suite covers garrisoning, movement, static deployment and coordinated movement; it does not exercise every task or network condition.
 3. Add and remove soldiers with Zeus; change group leader; take direct player control. Check that handlers do not accumulate and authored waypoints survive.
-4. Test vanilla and ACE treatment with wounded soldiers, insufficient supplies, incapacitation and unreachable patients. ACE must retain control of wounds and unconsciousness.
+4. Test ACE treatment and VCOM evacuation with wounded soldiers, insufficient supplies, incapacitation and unreachable patients. ACE must retain control of wounds and unconsciousness.
 5. Exercise transport seats, turrets and new helicopter variants. The existing transport detector still distinguishes cargo seats; this update does not implement a dedicated aircraft tactical controller.
 6. Test artillery with allies and civilians near the target, moving friendlies, translated UI and modded magazines. The friendly check is a snapshot at firing time; it cannot guarantee safety if units move into the impact area afterward.
 7. Run a large mission for at least 30 minutes. Compare server frame times, scheduled-script load, stuck units and RPT errors against the previous version with the same scenario.

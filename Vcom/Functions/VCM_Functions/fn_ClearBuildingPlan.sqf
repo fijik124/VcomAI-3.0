@@ -1,6 +1,6 @@
 /* Select a building containing the remembered contact, then split entry and outside support roles. */
 params ["_group","_enemy"];
-if (!VCM_BUILDINGCLEARING || {!([_group] call VCM_fnc_TacticalReady)} || {isNull _enemy} ||
+if (!VCM_BUILDINGCLEARING || {!([_group] call VCM_fnc_Autonomy)} || {!([_group] call VCM_fnc_TacticalReady)} || {isNull _enemy} ||
     {diag_tickTime < (_group getVariable ["VCM_ClearAfter",-1])}) exitWith {[]};
 private _contact = [leader _group,_enemy] call VCM_fnc_ContactPosition;
 if (_contact isEqualTo [] || {leader _group distance2D _contact > 80}) exitWith {[]};

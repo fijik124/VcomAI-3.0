@@ -23,7 +23,7 @@ if (VCM_CROSSOWNER_SUPPORT) exitWith {
 private _responders = 0;
 {
     private _support = _x;
-    if (_responders < 2 && {_support != _group} && {[_support] call VCM_fnc_GroupEnabled} &&
+    if (_responders < 2 && {_support != _group} && {[_support] call VCM_fnc_Autonomy} && {[_support] call VCM_fnc_GroupEnabled} &&
         {[side _group, side _support] call BIS_fnc_sideIsFriendly} &&
         {leader _support distance2D leader _group <= VCM_WARNDIST} &&
         {!(_support getVariable ["VCM_NORESCUE", false])} && {!(_support getVariable ["VCM_NOFLANK", false])} &&
