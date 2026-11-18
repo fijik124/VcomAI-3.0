@@ -35,6 +35,11 @@ if (!isServer) then {
 };
 VCOM_MINEARRAY = [];
 VCM_RunSerial = 0;
+VCM_ReactionUnits = [];
+// Cover shooters outside VCOM combat groups too. Existing hearing handlers share the same rate limit.
+["CAManBase","Fired",{
+    if (missionNamespace getVariable ["VCM_CIVILIANS",false]) then {_this call VCM_fnc_HearingAids};
+}] call CBA_fnc_addClassEventHandler;
 if (isServer) then {
     [] spawn {
         private _previous = [];
@@ -60,7 +65,36 @@ if (hasInterface) then {
     };
 };
 while {true} do {
+    // Include previous participants after death or side/group changes, so owned locks are released.
+    private _reactions = +VCM_ReactionUnits;
     {
+        if (local _x) then {
+            if (side group _x == civilian || {_x getVariable ["VCM_SurrenderState",[]] isNotEqualTo []} ||
+                {_x getVariable ["VCM_CivilianState",[]] isNotEqualTo []}) then {_reactions pushBackUnique _x};
+        };
+    } forEach allUnits;
+    {
+        [_x] call VCM_fnc_CivilianTick;
+        [_x] call VCM_fnc_SurrenderTick;
+    } forEach _reactions;
+    VCM_ReactionUnits = _reactions select {!isNull _x && {local _x} && {
+        _x getVariable ["VCM_CivilianState",[]] isNotEqualTo [] || {_x getVariable ["VCM_SurrenderState",[]] isNotEqualTo []}
+    }};
+    {
+        if (local _x) then {
+            if (_x getVariable ["VCM_Surrendered",false] && {
+                (units _x) findIf {_x getVariable ["VCM_SurrenderState",[]] isNotEqualTo []} < 0
+            }) then {_x setVariable ["VCM_Surrendered",false,true]};
+            if (VCM_SURRENDERCHANCE > 0 && {time >= (_x getVariable ["VCM_NextMorale",-1])}) then {
+                _x setVariable ["VCM_NextMorale",time + 5];
+                private _plan = [_x] call VCM_fnc_SurrenderPlan;
+                if (_plan isNotEqualTo []) then {
+                    // Start checks on a fresh plan, then throttle retries even when the random roll fails.
+                    if (random 1 < VCM_SURRENDERCHANCE) then {[_x] call VCM_fnc_Surrender};
+                    _x setVariable ["VCM_SurrenderAfter",time + 30,true];
+                };
+            };
+        };
         if ([_x] call VCM_fnc_GroupEnabled && {simulationEnabled leader _x} &&
             {_x getVariable ["VCM_RunId",[]] isEqualTo []} && {leader _x isKindOf "Man"}) then {
             _x call VCM_fnc_SquadExc;

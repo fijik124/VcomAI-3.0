@@ -25,7 +25,7 @@ function copyCode(from,to) {
 }
 const remoteFunctions = fs.readFileSync(path.join(root,'description.ext'),'utf8')
   .match(/class VCM_fnc_\w+\s*\{[^}]*\};/g);
-assert.equal(remoteFunctions?.length,15,'Product RPC whitelist must be included');
+assert.equal(remoteFunctions?.length,16,'Product RPC whitelist must be included');
 for (const module of project.modules) {
   const addon = path.join(stage,'addons',module.id);
   fs.mkdirSync(addon,{recursive:true});

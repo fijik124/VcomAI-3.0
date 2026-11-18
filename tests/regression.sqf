@@ -167,6 +167,7 @@ sleep 20;
 [] call compile preprocessFileLineNumbers "fire-movement.sqf";
 [] call compile preprocessFileLineNumbers "tactics.sqf";
 [] call compile preprocessFileLineNumbers "vehicle.sqf";
+[] call compile preprocessFileLineNumbers "reactions.sqf";
 
 Vcm_ActivateAI = false;
 sleep 0.5;

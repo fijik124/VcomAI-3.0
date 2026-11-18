@@ -17,6 +17,15 @@ class VCOM
 	{
 		file = "Vcom\Functions\VCM_Functions";
 		class InitSettings { preInit = 1; };
+		class CivilianEligible {};
+		class CivilianDanger {};
+		class CivilianTick {};
+		class CivilianRelease {};
+		class SurrenderPlan {};
+		class Surrender {};
+		class SurrenderTick {};
+		class SurrenderRelease {};
+		class DropWeapons {};
 		class Doctrine {};
 		class AutoDoctrine {};
 		class Autonomy {};

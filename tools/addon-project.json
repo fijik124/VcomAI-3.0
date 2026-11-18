@@ -13,6 +13,12 @@
       "description": "Settings, networking, shared contacts and lifecycle utilities",
       "functions": [
         "InitSettings",
+        "CivilianEligible",
+        "CivilianDanger",
+        "CivilianTick",
+        "CivilianRelease",
+        "SurrenderRelease",
+        "SurrenderTick",
         "Doctrine",
         "AutoDoctrine",
         "Autonomy",
@@ -79,6 +85,8 @@
       "category": "Squad",
       "description": "Squad controller, fire and movement, cover, retreat and building entry",
       "functions": [
+        "SurrenderPlan",
+        "Surrender",
         "SquadExc",
         "FireMoveReady",
         "BoundUnitReady",
@@ -200,6 +208,7 @@
       "category": "Equipment",
       "description": "Rearming, static weapons, mines and charges",
       "functions": [
+        "DropWeapons",
         "ActRearm",
         "ArmStatics",
         "BoxNrst",

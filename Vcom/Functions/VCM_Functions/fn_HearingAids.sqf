@@ -4,5 +4,5 @@ if (!local _unit || {!alive _unit} || {!Vcm_ActivateAI} || {_weapon in ["Put", "
 if (time < (_unit getVariable ["VCM_FTH", -10]) + 10) exitWith {};
 _unit setVariable ["VCM_FTH", time];
 if (isServer) then {[_unit, _weapon] call VCM_fnc_HearingRelay} else {
-    [_unit, _weapon] remoteExecCall ["VCM_fnc_HearingRelay", 2];
+    [_unit, _weapon, player] remoteExecCall ["VCM_fnc_HearingRelay", 2];
 };

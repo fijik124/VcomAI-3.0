@@ -29,6 +29,7 @@ fs.copyFileSync(path.join(root, 'tests/tactics.sqf'), path.join(addon, 'tactics.
 fs.copyFileSync(path.join(root, 'tests/vehicle.sqf'), path.join(addon, 'vehicle.sqf'));
 fs.copyFileSync(path.join(root, 'tests/performance.sqf'), path.join(addon, 'performance.sqf'));
 fs.copyFileSync(path.join(root, 'tests/advanced.sqf'), path.join(addon, 'advanced.sqf'));
+fs.copyFileSync(path.join(root, 'tests/reactions.sqf'), path.join(addon, 'reactions.sqf'));
 fs.copyFileSync(path.join(root, 'tests/coordination.sqf'), path.join(addon, 'coordination.sqf'));
 fs.copyFileSync(path.join(root, 'tests/evacuation.sqf'), path.join(addon, 'evacuation.sqf'));
 fs.copyFileSync(path.join(root, 'tests/cqb.sqf'), path.join(addon, 'cqb.sqf'));

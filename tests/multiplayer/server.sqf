@@ -108,8 +108,13 @@ if (VCM_TestAddonChecks isNotEqualTo []) then {
 _jipDoctrineGroup setVariable ["Vcm_Disable",true,true];
 deleteVehicle _jipDoctrineUnit; deleteGroup _jipDoctrineGroup;
 
+if (missionNamespace getVariable ["VCM_MP_ReactionsOnly",false]) exitWith {
+    [] call compile preprocessFileLineNumbers "mp\reactions.sqf";
+    call _finish;
+};
 if (missionNamespace getVariable ["VCM_MP_AdvancedOnly",false]) exitWith {
-    private _opfor = createGroup [east,true];
+    // Keep this shared enemy group alive across empty gaps between long scenarios.
+    private _opfor = createGroup [east,false];
     _opfor setVariable ["Vcm_Disable",true,true];
     [] call compile preprocessFileLineNumbers "mp\advanced.sqf";
     deleteGroup _opfor;
@@ -165,7 +170,7 @@ _hold setWaypointType "MOVE";
 sleep 1;
 [!(_group getVariable ["VCM_GarrisonBusy", false]), "garrison state releases after its order changes"] call _assert;
 _unit addBackpack "B_HMG_01_weapon_F";
-private _opfor = createGroup [east, true];
+private _opfor = createGroup [east, false];
 _opfor setVariable ["Vcm_Disable", true, true];
 private _target = _opfor createUnit ["O_Soldier_F", [1200,1000,0], [], 0, "NONE"];
 _target disableAI "ALL";

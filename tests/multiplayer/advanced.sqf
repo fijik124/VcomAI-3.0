@@ -145,5 +145,6 @@ private _clearState = (_clearProbe param [3,[]]) param [0,[]];
 _clearGroup setVariable ["Vcm_Disable",true,true]; sleep 0.5;
 {deleteVehicle _x} forEach (_clearUnits + [_clearHouse,_clearEnemy]);
 deleteGroup _clearGroup;
+[] call compile preprocessFileLineNumbers "mp\reactions.sqf";
 [] call compile preprocessFileLineNumbers "mp\doctrine.sqf";
 VCM_Debug = false;

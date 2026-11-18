@@ -23,6 +23,8 @@ Configure VCOM through CBA Addon Options. The non-CBA switch, vanilla treatment 
 
 Version 3.8.0 adds autonomous counter-flanking, recon observation/reporting, night discipline, defensive positions, doctrine selection and bounded danger memory. AI chooses its own behavior. Eight optional Zeus modules provide specific objectives, fallback/danger overrides and resets; five Eden-only presets support mission authors. Authorized curators see local point/danger markers. See [COMMANDS.md](COMMANDS.md) for automatic decisions, optional overrides, reset controls and limits.
 
+Civilian flight/prone freezing and broken-squad surrender are enabled by default. Configure them under **19 Civilian Reactions** and **20 Surrender** in CBA Addon Options. Surrendered troops drop equipped firearms with attachments and loaded ammunition when weapon dropping is enabled. ACE Captives handles surrender and handcuffing when available. See [FEATURES.md](FEATURES.md) for thresholds, mission opt-outs and cleanup behavior.
+
 User-reported in-game testing is **done for 10 of 24 checks**: CBA grouping, debugger activation/panel/inspection/Zeus camera/display transitions, firing safety, vehicles/convoys, cancellation/player control, and multiplayer/endurance. Completed checks retain `true` in [TEST_RESULTS.md](TEST_RESULTS.md); the 14 waiting checks remain `false` in [IN_GAME_CHECKLIST.md](IN_GAME_CHECKLIST.md).
 
 Build and package with Node.js, PowerShell and the `hemtt` command on PATH:
@@ -32,6 +34,7 @@ node tests/validate.mjs
 node tools/build-release.mjs
 ./tests/run-runtime.ps1 -Addon
 ./tests/run-runtime.ps1 -Addon -Suite advanced
+./tests/run-runtime.ps1 -Addon -Suite reactions
 ./tests/run-runtime.ps1 -Addon -Suite doctrine -TimeoutSeconds 480
 ./tests/run-runtime.ps1 -Addon -Suite cqb
 ./tests/run-runtime.ps1 -Addon -Suite cqb-floors

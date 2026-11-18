@@ -1,5 +1,16 @@
 /* Shared descriptors: name, CBA type, title, default, minimum, maximum, decimals, global, CBA subcategory. */
 [
+    ["VCM_CIVILIANS","CHECKBOX","Civilian flight and prone freezing",true,0,1,0,true,"19 Civilian Reactions"],
+    ["VCM_CIVILIANRANGE","SLIDER","Civilian gunfire hearing range (meters)",150,25,400,0,true,"19 Civilian Reactions"],
+    ["VCM_CIVILIANPANIC","SLIDER","Civilian calm-down delay after gunfire (seconds)",30,10,120,0,true,"19 Civilian Reactions"],
+    ["VCM_CIVILIANESCAPE","SLIDER","Civilian escape distance per move (meters)",45,15,100,0,true,"19 Civilian Reactions"],
+    ["VCM_CIVILIANFREEZE","SLIDER","Chance of initial prone freeze",0.25,0,1,2,true,"19 Civilian Reactions"],
+    ["VCM_SURRENDER","CHECKBOX","Allow broken AI squads to surrender",true,0,1,0,true,"20 Surrender"],
+    ["VCM_SURRENDERDROP","CHECKBOX","Drop equipped firearms when surrendering",true,0,1,0,true,"20 Surrender"],
+    ["VCM_SURRENDERLOSS","SLIDER","Surrender casualty fraction",0.6,0.4,0.95,2,true,"20 Surrender"],
+    ["VCM_SURRENDERSUPPRESSION","SLIDER","Surrender suppression threshold",0.85,0.5,1,2,true,"20 Surrender"],
+    ["VCM_SURRENDERRANGE","SLIDER","Maximum remembered enemy range for surrender (meters)",60,10,150,0,true,"20 Surrender"],
+    ["VCM_SURRENDERCHANCE","SLIDER","Surrender chance per morale check",0.35,0,1,2,true,"20 Surrender"],
     ["VCM_COUNTERFLANK","CHECKBOX","React to remembered flank threats",true,0,1,0,true,"04 Counter-Flanking"],
     ["VCM_FLANKRANGE","SLIDER","Counter-flank contact range (meters)",250,80,500,0,true,"04 Counter-Flanking"],
     ["VCM_FLANKANGLE","SLIDER","Counter-flank bearing change (degrees)",60,30,120,0,true,"04 Counter-Flanking"],

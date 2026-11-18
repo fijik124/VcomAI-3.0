@@ -5,6 +5,25 @@ if (!local _group) exitWith {};
 private _unit = leader _group;
 private _run = _group getVariable ["VCM_RunId", []];
 switch (_operation) do {
+    case "prepareReaction": {
+        {_x disableAI "AUTOTARGET"; _x setUnitPos "MIDDLE"; _x forceSpeed 2} forEach units _group;
+    };
+    case "fireCivilian": {
+        _unit disableAI "TARGET";
+        _unit disableAI "AUTOTARGET";
+        _unit setVariable ["VCM_FTH",-100];
+        _unit forceWeaponFire [currentWeapon _unit,"Single"];
+    };
+    case "forgeCivilian": {[_unit] remoteExecCall ["VCM_fnc_CivilianDanger",_position select 0]};
+    case "surrender": {
+        [_group,_position select 0] spawn {
+            params ["_group","_enemy"];
+            _group reveal [_enemy,4];
+            sleep 0.5;
+            _group setVariable ["VCM_SurrenderAfter",-1,true];
+            _group setVariable ["VCM_TestSurrender",[_group] call VCM_fnc_Surrender,true];
+        };
+    };
     case "doctrinePost": {
         [_group] call VCM_fnc_CommandTick;
         _group setVariable ["VCM_NextTactic",1e9];

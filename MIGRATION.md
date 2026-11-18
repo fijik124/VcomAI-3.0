@@ -3,6 +3,22 @@
 Future behavior requests and remaining acceptance work are tracked in [ROADMAP.md](ROADMAP.md).
 The additional behaviors, settings, performance work and addon installation are described in [FEATURES.md](FEATURES.md).
 
+## Civilian and surrender additions (November 17, 2026)
+
+Eleven synchronized CBA controls add **19 Civilian Reactions** and **20 Surrender**, bringing the current settings total to 115 across 20 groups. Both behaviors and surrender weapon dropping default to enabled. Existing saved settings keep their values. Civilians do not need to be added to `VCM_SIDEENABLED`. Mission authors can opt units or groups out with `VCM_NOCIVILIAN` and `VCM_NOSURRENDER` respectively.
+
+Missions with restrictive remote-execution policies must merge the updated `VCM_fnc_CivilianDanger` declaration from the supplied `REMOTE-EXEC.hpp`. This receiver accepts only server-originated instructions. Headless-client hearing reports now include their connected HC identity so the server can validate the shooter owner when the engine reports sender zero.
+
+Run `./tests/run-runtime.ps1 -Suite reactions` for civilian travel/freezing, gunfire routing, surrender, inventory conservation, setting changes and ACE restraint checks. Add `-Addon` to exercise the packaged PBOs. The advanced multiplayer suite also checks cross-owner gunfire, forged danger rejection and restoration after transferring panicked civilians or surrendered squads between HCs.
+
+Final automated verification on November 17, 2026:
+
+- HEMTT compiled 305 SQF files with zero compilation errors; the signed release built all eight PBOs. Compiler/style warnings remain recorded in `build/validation.log`.
+- Packaged reaction suite: **83 checks, zero failures**, including actual civilian travel, prone freezing, real gunfire, firearm ammunition/attachment conservation, live weapon-drop settings, ACE handcuffing, native surrender fallback and automatic initiation. Log: `build/runtime/profiles-20261117-202122/arma3server_x64_2026-11-17_20-21-22.rpt`.
+- Final packaged advanced multiplayer suite: **130 checks, zero failures** with two joining HCs. It covers civilian panic and surrender handoffs, original AI-lock restoration, rejected forged danger instructions, no duplicate ground weapons, plus coordination, evacuation, room-search handoff and recon reporting. Log: `build/multiplayer/run-20261117-202326/server/arma3server_x64_2026-11-17_20-23-26.rpt`.
+
+Reaction snapshots explicitly restore local AI flags, stance and forced speed after the engine resets them during ownership transfer. Completed weapon transfers are recorded publicly and are not repeated from a stale handoff inventory. Surrender initiation runs without scheduler suspension so local controllers and settings changes cannot observe a partially initialized surrender. Shared multiplayer-test enemy groups now remain alive across empty gaps between scenarios and are explicitly deleted afterward.
+
 This repository contains VCOM Edited by Fijik as a modular addon and compatible mission scripts. For the mission-script installation, copy `Vcom/` into the mission, include `Vcom/cfgFunctions.hpp` inside `CfgFunctions`, and execute `Vcom/VcomInit.sqf` once from mission `init.sqf`. Merge the supplied `CfgRemoteExec` with the mission's existing configuration. Do not replace other mods' required remote-function declarations.
 
 Version 3.8.0 installs as `@VCOM_Edited_by_Fijik` and contains eight signed PBOs. **CBA_A3 and ACE including ACE Medical are required on the server, headless clients and player clients.** Load them before VCOM. The core PBO declares `cba_main`, `cba_settings`, `ace_main`, `ace_medical` and `ace_medical_engine` as dependencies. Mission-script startup checks the same patches and logs an error before exiting if any are missing.

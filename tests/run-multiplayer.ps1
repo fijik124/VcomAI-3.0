@@ -1,5 +1,6 @@
 param(
     [switch]$AdvancedOnly,
+    [switch]$ReactionsOnly,
     [string]$ArmaDirectory = "${env:ProgramFiles(x86)}/Steam/steamapps/common/Arma 3",
     [int]$TimeoutSeconds = 360,
     [string[]]$Mods = @(),
@@ -10,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 $Mods = @(Resolve-VcomTestMods -ArmaDirectory $ArmaDirectory -Mods $Mods)
 $prepareArguments = @((Join-Path $PSScriptRoot 'prepare-multiplayer.mjs'))
 if ($AdvancedOnly) { $prepareArguments += '--advanced-only' }
+if ($ReactionsOnly) { $prepareArguments += '--reactions-only' }
 if ($Addon) {
     $project = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/addon-project.json') -Raw | ConvertFrom-Json
     $addonMod = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) 'build/upload') $project.modFolder

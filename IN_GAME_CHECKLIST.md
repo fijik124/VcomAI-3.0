@@ -34,6 +34,13 @@ Load CBA, ACE Medical and the updated VCOM on every machine. Restart Arma after 
 | 20 | Night equipment | Equipped flashlights, NVGs/IR lasers and carried ACE hand flares behave according to contact and stealth conditions without creating equipment or ammunition. | false | |
 | 22 | ACE evacuation | With casualty evacuation explicitly enabled, a casualty physically moves toward cover, detaches afterward and remains under ACE medical control. | false | |
 
+## Additional checks for civilian reactions and surrender
+
+These new scenarios supplement the original 24 checks and have not been manually verified:
+
+- With **19 Civilian Reactions** enabled, fire near several unarmed civilians. Confirm a mix of running away and brief prone freezing, then a return to normal orders after quiet. Repeat with the feature disabled and with a mission-locked civilian.
+- With **20 Surrender** enabled, heavily suppress or inflict severe losses on an AI squad near an enemy it has spotted. For a repeatable manual test, temporarily set surrender chance to 1. Confirm raised hands, no firing, and dropped weapons retaining attachments and ammunition. Test the weapon-drop toggle and ACE handcuff/release interactions. Restore the desired chance afterward.
+
 ## Failure details
 
 Copy this block for each problem:

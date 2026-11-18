@@ -2,7 +2,7 @@ param(
     [string]$ArmaDirectory = "${env:ProgramFiles(x86)}/Steam/steamapps/common/Arma 3",
     [int]$TimeoutSeconds = 300,
     [string[]]$Mods = @(),
-    [ValidateSet('all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors','dependencies','doctrine')][string]$Suite = 'all',
+    [ValidateSet('all','safety','tactics','vehicle','performance','advanced','cqb','cqb-floors','dependencies','doctrine','reactions')][string]$Suite = 'all',
     [switch]$Addon,
     [ValidateRange(30,1800)][int]$PerformanceSeconds = 60,
     [switch]$Vanilla

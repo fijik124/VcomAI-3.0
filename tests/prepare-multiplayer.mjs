@@ -19,7 +19,7 @@ if (addon) description = description.replace('#include "vcom\\cfgFunctions.hpp"'
 description = description.replace('class VCM_fnc_RequestSettings', 'class VCM_test_fnc_Report { allowedTargets=2; jip=0; };\nclass VCM_test_fnc_Probe { allowedTargets=0; jip=0; };\nclass VCM_test_fnc_Scenario { allowedTargets=0; jip=0; };\nclass VCM_fnc_RequestSettings');
 description += '\nclass Header { gameType="COOP"; minPlayers=1; maxPlayers=3; };\n';
 fs.writeFileSync(path.join(folder, 'description.ext'), description);
-fs.writeFileSync(path.join(folder, 'init.sqf'), `VCM_MP_AdvancedOnly=${process.argv.includes('--advanced-only')};\nVCM_TestAddonChecks=${sqfLiteral(addon ? addonChecks() : [])};\n` + (addon ? '' : '[] execVM "Vcom\\VcomInit.sqf";\n') + 'if (isServer) then {[] execVM "mp\\server.sqf"} else {[] execVM "mp\\client.sqf"};\n');
+fs.writeFileSync(path.join(folder, 'init.sqf'), `VCM_MP_AdvancedOnly=${process.argv.includes('--advanced-only')};\nVCM_MP_ReactionsOnly=${process.argv.includes('--reactions-only')};\nVCM_TestAddonChecks=${sqfLiteral(addon ? addonChecks() : [])};\n` + (addon ? '' : '[] execVM "Vcom\\VcomInit.sqf";\n') + 'if (isServer) then {[] execVM "mp\\server.sqf"} else {[] execVM "mp\\client.sqf"};\n');
 fs.writeFileSync(path.join(folder, 'mission.sqm'), `version=12;
 class Mission {
  addOns[]={"A3_Characters_F_BLUFOR","A3_Map_VR","A3_Modules_F"};
